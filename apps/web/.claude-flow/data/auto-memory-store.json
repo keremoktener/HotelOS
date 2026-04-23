@@ -1,0 +1,28 @@
+[
+  {
+    "id": "mem-MEMORY-memory-index",
+    "key": "memory-index",
+    "content": "- [HotelOS Project Overview](project_hotelos.md) — Full stack, architecture, 10 modules, 6 phases, conventions, and non-negotiable rules for the HotelOS SaaS platform",
+    "summary": "Memory Index",
+    "namespace": "core",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/keremoktener/.claude/projects/-Users-keremoktener-Desktop-Files-HotelOS/memory/MEMORY.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1776979272715
+  },
+  {
+    "id": "mem-project_hotelos----",
+    "key": "-",
+    "content": "name: HotelOS Project Overview\ndescription: Full context for the HotelOS hotel management SaaS platform — stack, architecture, modules, phases, and conventions\ntype: project\noriginSessionId: d8a2873d-e0ca-4cca-8759-c5af57241c6a\n---\nHotelOS is a multi-tenant SaaS hotel management platform. Turkish UI, English codebase. KVKK-compliant (deploy on Azure Turkey or AWS Frankfurt).\n\n**Stack:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, tRPC, Prisma 5+, PostgreSQL 16+, Clerk (auth), B",
+    "summary": "---",
+    "namespace": "project_hotelos",
+    "type": "semantic",
+    "metadata": {
+      "sourceFile": "/Users/keremoktener/.claude/projects/-Users-keremoktener-Desktop-Files-HotelOS/memory/project_hotelos.md",
+      "bootstrapped": true
+    },
+    "createdAt": 1776979272715
+  }
+]

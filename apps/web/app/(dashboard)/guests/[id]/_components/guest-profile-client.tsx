@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
   WAITING: { label: 'Beklemede', tone: 'info' }, CONFIRMED: { label: 'Onaylandı', tone: 'neutral' },
@@ -46,10 +47,18 @@ interface Guest {
 }
 
 export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; totalRevenue: number }) {
+  const router = useRouter()
   const initials = `${g.firstName[0] ?? ''}${g.lastName[0] ?? ''}`.toUpperCase()
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
+      <button
+        onClick={() => router.push('/guests')}
+        style={{ background: 'none', border: '1px solid var(--border-c)', borderRadius: 6, padding: '5px 10px', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', marginBottom: 16 }}
+      >
+        ← Misafirler
+      </button>
+
       {/* Header card */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>

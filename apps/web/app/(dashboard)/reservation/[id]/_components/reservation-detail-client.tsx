@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { trpc } from '@/lib/trpc/client'
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
   WAITING: { label: 'Beklemede', tone: 'info' }, CONFIRMED: { label: 'Onaylandı', tone: 'neutral' },
@@ -59,9 +62,34 @@ interface Reservation {
 }
 
 export function ReservationDetailClient({ reservation: r }: { reservation: Reservation }) {
+  const router = useRouter()
   const nights = Math.round((new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime()) / (1000 * 60 * 60 * 24))
   const balance = r.totalPrice - r.paidAmount
   const statusMeta = STATUS_META[r.status] ?? { label: r.status, tone: 'neutral' }
+
+  const [cancelReason, setCancelReason] = useState('')
+  const [showCancelInput, setShowCancelInput] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  function onSuccess() { router.refresh() }
+  function onError(err: { message: string }) { setActionError(err.message) }
+
+  const checkInMut = trpc.reservation.checkIn.useMutation({ onSuccess, onError })
+  const checkOutMut = trpc.reservation.checkOut.useMutation({ onSuccess, onError })
+  const cancelMut = trpc.reservation.cancel.useMutation({
+    onSuccess: () => { setShowCancelInput(false); setCancelReason(''); onSuccess() },
+    onError,
+  })
+
+  const busy = checkInMut.isPending || checkOutMut.isPending || cancelMut.isPending
+  const canCheckIn = r.status === 'WAITING' || r.status === 'CONFIRMED'
+  const canCheckOut = r.status === 'CHECKEDIN'
+  const canCancel = r.status === 'WAITING' || r.status === 'CONFIRMED'
+
+  const btnBase: React.CSSProperties = {
+    width: '100%', padding: '9px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+    cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1, border: 0,
+  }
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
@@ -115,7 +143,7 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
             <div style={{ padding: 16 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  <tr><td style={{ padding: '7px 0', fontSize: 13, color: 'var(--text-2)' }}>{nights} gece × gecelik fiyat</td><td style={{ padding: '7px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}></td></tr>
+                  <tr><td style={{ padding: '7px 0', fontSize: 13, color: 'var(--text-2)' }}>{nights} gece</td><td style={{ padding: '7px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}></td></tr>
                   <tr style={{ borderTop: '1px solid var(--border-c)' }}>
                     <td style={{ padding: '10px 0 0', fontWeight: 600, fontSize: 13 }}>Toplam</td>
                     <td style={{ padding: '10px 0 0', textAlign: 'right', fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{formatCurrency(r.totalPrice)}</td>
@@ -153,6 +181,70 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
 
         {/* Right rail */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Actions */}
+          {(canCheckIn || canCheckOut || canCancel) && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>İşlemler</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {canCheckIn && (
+                  <button
+                    onClick={() => checkInMut.mutate({ id: r.id })}
+                    disabled={busy}
+                    style={{ ...btnBase, background: 'var(--good)', color: '#fff' }}
+                  >
+                    {checkInMut.isPending ? 'İşleniyor…' : '✓ Giriş yap'}
+                  </button>
+                )}
+                {canCheckOut && (
+                  <button
+                    onClick={() => checkOutMut.mutate({ id: r.id })}
+                    disabled={busy}
+                    style={{ ...btnBase, background: 'var(--accent-c)', color: 'var(--accent-fg)' }}
+                  >
+                    {checkOutMut.isPending ? 'İşleniyor…' : '→ Çıkış yap'}
+                  </button>
+                )}
+                {canCancel && !showCancelInput && (
+                  <button
+                    onClick={() => setShowCancelInput(true)}
+                    disabled={busy}
+                    style={{ ...btnBase, background: 'var(--surface-2)', color: 'var(--bad)', border: '1px solid var(--border-c)' }}
+                  >
+                    İptal et
+                  </button>
+                )}
+                {showCancelInput && (
+                  <div>
+                    <input
+                      value={cancelReason}
+                      onChange={e => setCancelReason(e.target.value)}
+                      placeholder="İptal nedeni (zorunlu)"
+                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--bg)', fontSize: 12, color: 'var(--text)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
+                    />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => cancelMut.mutate({ id: r.id, reason: cancelReason })}
+                        disabled={busy || cancelReason.trim().length === 0}
+                        style={{ flex: 1, padding: '7px', background: 'var(--bad)', color: '#fff', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: cancelReason.trim() ? 'pointer' : 'not-allowed', opacity: cancelReason.trim() ? 1 : 0.5 }}
+                      >
+                        Onayla
+                      </button>
+                      <button
+                        onClick={() => { setShowCancelInput(false); setCancelReason('') }}
+                        style={{ padding: '7px 12px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+                      >
+                        Vazgeç
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {actionError && (
+                <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--bad-bg)', color: 'var(--bad)', borderRadius: 6, fontSize: 12 }}>{actionError}</div>
+              )}
+            </div>
+          )}
+
           {r.room && (
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Oda durumu</div>
@@ -166,11 +258,13 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
               )}
             </div>
           )}
+
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Misafir</div>
             <Link href={`/guests/${r.guest.id}`} style={{ fontSize: 13, color: 'var(--accent-c)', textDecoration: 'none', fontWeight: 500 }}>{r.guest.firstName} {r.guest.lastName}</Link>
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>{r.guest.phone}</div>
           </div>
+
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Dahili notlar</div>
             <textarea defaultValue={r.notes} style={{ width: '100%', minHeight: 60, resize: 'vertical', padding: 10, border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--bg)', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }}/>
@@ -181,5 +275,4 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
   )
 }
 
-// Need React for Fragment
 import React from 'react'

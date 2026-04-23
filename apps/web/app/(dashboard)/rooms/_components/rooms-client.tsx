@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle, AlertTriangle, Clock, Moon, Bed } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { CheckCircle, AlertTriangle, Moon, Bed } from 'lucide-react'
+import { trpc } from '@/lib/trpc/client'
 
 const STATUS_META: Record<string, { label: string; tone: string; accent: string }> = {
   CLEAN:  { label: 'Temiz',   tone: 'good', accent: 'var(--good)' },
@@ -9,6 +11,9 @@ const STATUS_META: Record<string, { label: string; tone: string; accent: string 
   FAULTY: { label: 'Arızalı', tone: 'bad',  accent: 'var(--bad)' },
   DND:    { label: 'DND',     tone: 'info', accent: 'var(--info)' },
 }
+
+const STATUS_OPTIONS = ['CLEAN', 'DIRTY', 'FAULTY', 'DND'] as const
+type RoomStatus = typeof STATUS_OPTIONS[number]
 
 interface Room {
   id: string; number: string; floor: number | null; status: string; faultNote: string | null
@@ -53,21 +58,60 @@ function StatusStat({ icon, label, count, color, bg }: { icon: React.ReactNode; 
   )
 }
 
-function RoomCard({ r }: { r: Room }) {
+function RoomCard({ r, onChanged }: { r: Room; onChanged: () => void }) {
   const meta = STATUS_META[r.status] ?? { label: r.status, tone: 'neutral', accent: 'var(--text-3)' }
+  const [open, setOpen] = useState(false)
+  const [faultDetail, setFaultDetail] = useState('')
+
+  const updateStatus = trpc.room.updateStatus.useMutation({
+    onSuccess: () => { setOpen(false); setFaultDetail(''); onChanged() },
+  })
+
   return (
-    <div style={{ position: 'relative', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: '14px 14px 12px 16px', overflow: 'hidden', cursor: 'pointer' }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-    >
+    <div style={{ position: 'relative', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: '14px 14px 12px 16px', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: meta.accent }}/>
       <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: 8 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{r.number}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{r.roomType.name}</div>
         </div>
-        <Chip tone={meta.tone} dot>{meta.label}</Chip>
+        <button
+          onClick={() => setOpen(v => !v)}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          title="Durum değiştir"
+        >
+          <Chip tone={meta.tone} dot>{meta.label}</Chip>
+        </button>
       </div>
+
+      {/* Status picker dropdown */}
+      {open && (
+        <div style={{ marginBottom: 10, background: 'var(--surface-2)', borderRadius: 6, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {STATUS_OPTIONS.filter(s => s !== r.status).map(s => (
+            <button
+              key={s}
+              onClick={() => {
+                if (s === 'FAULTY' && !faultDetail.trim()) return
+                updateStatus.mutate({ id: r.id, status: s, faultDetail: s === 'FAULTY' ? faultDetail : undefined })
+              }}
+              disabled={updateStatus.isPending || (s === 'FAULTY' && !faultDetail.trim())}
+              style={{ padding: '5px 8px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 4, fontSize: 11, fontWeight: 500, cursor: 'pointer', textAlign: 'left', color: STATUS_META[s].accent, opacity: (s === 'FAULTY' && !faultDetail.trim()) ? 0.4 : 1 }}
+            >
+              → {STATUS_META[s].label}
+            </button>
+          ))}
+          {(r.status !== 'FAULTY' || open) && (
+            <input
+              value={faultDetail}
+              onChange={e => setFaultDetail(e.target.value)}
+              placeholder="Arıza notu (FAULTY için)"
+              style={{ marginTop: 4, padding: '5px 8px', border: '1px solid var(--border-c)', borderRadius: 4, fontSize: 11, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+            />
+          )}
+          <button onClick={() => setOpen(false)} style={{ padding: '4px', fontSize: 10, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>Kapat</button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--text-2)', marginBottom: 8 }}>
         <span>{r.roomType.capacity} kişi</span>
         <span>{formatCurrency(r.roomType.basePrice)}</span>
@@ -88,17 +132,18 @@ function RoomCard({ r }: { r: Room }) {
 }
 
 export function RoomsClient({ rooms, countBy }: Props) {
+  const router = useRouter()
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const floors = Array.from(new Set(rooms.map(r => r.floor))).sort((a, b) => (b ?? 0) - (a ?? 0))
+
+  const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
+  const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
 
   const viewBtn = (v: 'grid' | 'list') => ({
     padding: '5px 12px', background: view === v ? 'var(--surface-2)' : 'transparent',
     color: view === v ? 'var(--text)' : 'var(--text-2)', border: 0, borderRadius: 4,
     fontSize: 12, fontWeight: view === v ? 600 : 450, cursor: 'pointer' as const,
   })
-
-  const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
-  const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
@@ -121,13 +166,13 @@ export function RoomsClient({ rooms, countBy }: Props) {
       {view === 'grid' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {floors.map(f => (
-            <div key={f} style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+            <div key={String(f)} style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border-c)' }}>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>Kat {f}</div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{f != null ? `Kat ${f}` : 'Katsız'}</div>
                 <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{rooms.filter(r => r.floor === f).length} oda</span>
               </div>
               <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-                {rooms.filter(r => r.floor === f).map(r => <RoomCard key={r.id} r={r}/>)}
+                {rooms.filter(r => r.floor === f).map(r => <RoomCard key={r.id} r={r} onChanged={() => router.refresh()}/>)}
               </div>
             </div>
           ))}
@@ -146,7 +191,7 @@ export function RoomsClient({ rooms, countBy }: Props) {
                   <tr key={r.id} style={{ borderTop: '1px solid var(--border-c)' }}>
                     <td style={{ ...td, fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{r.number}</td>
                     <td style={td}>{r.roomType.name}</td>
-                    <td style={td}>{r.floor}</td>
+                    <td style={td}>{r.floor ?? '—'}</td>
                     <td style={td}><Chip tone={meta.tone} dot>{meta.label}</Chip></td>
                     <td style={td}>{r.currentGuest ? `${r.currentGuest.firstName} ${r.currentGuest.lastName}` : <span style={{ color: 'var(--text-3)' }}>—</span>}</td>
                     <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(r.roomType.basePrice)}</td>
