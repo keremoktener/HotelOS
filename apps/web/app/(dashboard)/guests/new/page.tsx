@@ -32,12 +32,13 @@ const DIAL_CODES = [
 ]
 
 const COUNTRIES = [
-  'Türkiye','Almanya','İngiltere','Amerika Birleşik Devletleri','Fransa','Rusya',
-  'Hollanda','Belçika','Avusturya','İsviçre','İtalya','İspanya','Yunanistan',
-  'Bulgaristan','Gürcistan','Azerbaycan','İran','Suudi Arabistan','Birleşik Arap Emirlikleri',
-  'Kuveyt','Katar','İsrail','Ürdün','Mısır','Polonya','Çekya','Romanya',
-  'Macaristan','İsveç','Norveç','Danimarka','Finlandiya','Portekiz','Japonya',
-  'Çin','Güney Kore','Hindistan','Pakistan','Avustralya','Kanada','Brezilya','Arjantin',
+  'Almanya','Amerika Birleşik Devletleri','Arjantin','Avustralya','Avusturya',
+  'Azerbaycan','Belçika','Birleşik Arap Emirlikleri','Brezilya','Bulgaristan',
+  'Çekya','Çin','Danimarka','Finlandiya','Fransa','Güney Kore','Gürcistan',
+  'Hindistan','Hollanda','İngiltere','İran','İsrail','İspanya','İsveç','İsviçre',
+  'İtalya','Japonya','Kanada','Katar','Kuveyt','Macaristan','Mısır','Norveç',
+  'Pakistan','Polonya','Portekiz','Romanya','Rusya','Suudi Arabistan','Türkiye',
+  'Ürdün','Yunanistan',
 ]
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
