@@ -1,14 +1,17 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
+import { cache } from 'react'
 import { TRPCError } from '@trpc/server'
 
-export async function getTenantId(clerkOrgId: string): Promise<string | null> {
+// React cache() deduplicates this call across all server components
+// in the same request, so each page only hits the DB once per navigation.
+export const getTenantId = cache(async (clerkOrgId: string): Promise<string | null> => {
   const tenant = await db.tenant.findFirst({
     where: { slug: clerkOrgId },
     select: { id: true },
   })
   return tenant?.id ?? null
-}
+})
 
 export async function requireTenantId(clerkOrgId: string | null | undefined): Promise<string> {
   if (!clerkOrgId) {
