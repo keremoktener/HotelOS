@@ -4,7 +4,7 @@ import type { ReservationCreateInput, ReservationFilters } from './types'
 
 const reservationInclude = {
   guest: true,
-  room: { include: { type: true } },
+  room: { include: { roomType: true } },
   payments: true,
   signatures: true,
 } as const
@@ -91,7 +91,6 @@ export async function createPayment(
   tenantId: string,
   data: { reservationId: string; amount: number; method: any; reference?: string; paidAt?: Date },
 ) {
-  // Verify reservation belongs to tenant before creating payment
   const reservation = await db.reservation.findFirst({
     where: { id: data.reservationId, tenantId },
   })
@@ -111,7 +110,7 @@ export async function getTodayArrivals(tenantId: string) {
       checkIn: { gte: today, lt: tomorrow },
       status: { in: ['WAITING', 'CONFIRMED'] },
     },
-    include: { guest: true, room: { include: { type: true } } },
+    include: { guest: true, room: { include: { roomType: true } } },
     orderBy: { checkIn: 'asc' },
   })
 }
@@ -128,7 +127,7 @@ export async function getTodayDepartures(tenantId: string) {
       checkOut: { gte: today, lt: tomorrow },
       status: 'CHECKEDIN',
     },
-    include: { guest: true, room: { include: { type: true } } },
+    include: { guest: true, room: { include: { roomType: true } } },
     orderBy: { checkOut: 'asc' },
   })
 }
@@ -142,7 +141,7 @@ export async function getOccupancySummary(tenantId: string) {
     db.reservation.count({
       where: { tenantId, status: 'CHECKEDIN', checkIn: { lte: today }, checkOut: { gte: today } },
     }),
-    db.room.groupBy({ by: ['status'], where: { tenantId }, _count: true }),
+    db.room.groupBy({ by: ['status'], where: { tenantId }, _count: true, orderBy: { status: 'asc' } }),
   ])
 
   return { totalRooms, occupiedRooms, roomsByStatus }

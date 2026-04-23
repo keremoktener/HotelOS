@@ -12,13 +12,13 @@ export async function listRooms(
       ...(filters.typeId && { typeId: filters.typeId }),
       ...(filters.floor !== undefined && { floor: filters.floor }),
     },
-    include: { type: true },
+    include: { roomType: true },
     orderBy: [{ floor: 'asc' }, { number: 'asc' }],
   })
 }
 
 export async function getRoomById(tenantId: string, id: string) {
-  return db.room.findFirst({ where: { id, tenantId }, include: { type: true } })
+  return db.room.findFirst({ where: { id, tenantId }, include: { roomType: true } })
 }
 
 export async function createRoom(tenantId: string, data: {
@@ -26,7 +26,7 @@ export async function createRoom(tenantId: string, data: {
 }) {
   return db.room.create({
     data: { ...data, tenantId, features: data.features ?? [] },
-    include: { type: true },
+    include: { roomType: true },
   })
 }
 

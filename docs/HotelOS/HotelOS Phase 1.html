@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>HotelOS — Phase 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; font-family: 'Inter', system-ui, sans-serif; }
+  body { overflow: hidden; }
+
+  /* ========== THEME: Light (default) ========== */
+  .theme-light {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --surface-2: #f5f5f4;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --text: #1c1917;
+    --text-2: #57534e;
+    --text-3: #a8a29e;
+    --accent: #111827;
+    --accent-weak: #f3f4f6;
+    --accent-fg: #ffffff;
+    --good: #047857;
+    --good-bg: #ecfdf5;
+    --warn: #b45309;
+    --warn-bg: #fef3c7;
+    --bad: #b91c1c;
+    --bad-bg: #fef2f2;
+    --info: #1d4ed8;
+    --info-bg: #eff6ff;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --canvas: #fafaf9;
+  }
+
+  /* ========== (unused) ========== */
+  .theme-warm-DISABLED {
+    --bg: #f7f2ea;
+    --surface: #fbf8f3;
+    --surface-2: #f2ece2;
+    --border: #e4dbcc;
+    --border-strong: #d2c4ae;
+    --text: #2a241c;
+    --text-2: #665a48;
+    --text-3: #a3967f;
+    --accent: #1f3d2e;
+    --accent-weak: #e9eee9;
+    --accent-fg: #faf8f3;
+    --good: #3a6b4a;
+    --good-bg: #e5ede4;
+    --warn: #8a5a14;
+    --warn-bg: #f6ead0;
+    --bad: #8c2a22;
+    --bad-bg: #f4e1dc;
+    --info: #32567a;
+    --info-bg: #e4ecf3;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --radius: 8px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(80,60,30,0.05);
+    --shadow: 0 2px 6px rgba(80,60,30,0.07), 0 1px 2px rgba(80,60,30,0.04);
+    --canvas: #f3ede3;
+  }
+
+  /* ========== THEME: Dark — same structure + rhythm as Light ========== */
+  .theme-dark {
+    --bg: #0c0d0f;
+    --surface: #141518;
+    --surface-2: #1b1d21;
+    --border: #262930;
+    --border-strong: #353941;
+    --text: #eeeef0;
+    --text-2: #a2a5ae;
+    --text-3: #6a6d78;
+    --accent: #f4f4f5;
+    --accent-weak: #23252b;
+    --accent-fg: #0c0d0f;
+    --good: #34d399;
+    --good-bg: #0f2b22;
+    --warn: #fbbf24;
+    --warn-bg: #2b2109;
+    --bad: #f87171;
+    --bad-bg: #2b1417;
+    --info: #60a5fa;
+    --info-bg: #111f35;
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02);
+    --canvas: #0c0d0f;
+  }
+
+  /* Reset canvas behaviour — our app is sized by the artboard parent */
+  .app-root {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    line-height: 1.4;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-root.theme-dark { font-variant-numeric: tabular-nums; }
+
+  /* scrollbars inside artboards: hidden, design-canvas style */
+  .app-root *::-webkit-scrollbar { width: 0; height: 0; }
+  .app-root * { scrollbar-width: none; }
+
+  /* text editable inputs must not use dc-editable styles */
+  .app-root input, .app-root button, .app-root textarea, .app-root select {
+    font: inherit;
+    color: inherit;
+  }
+  .app-root button { cursor: pointer; }
+
+  /* ========== Tweaks panel ========== */
+  .tweaks-panel {
+    position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+    background: #1a1a1a; color: #eee;
+    border-radius: 10px; padding: 14px 16px;
+    font: 12px/1.4 'Inter', system-ui, sans-serif;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    min-width: 240px;
+    display: none;
+  }
+  .tweaks-panel.open { display: block; }
+  .tweaks-panel h4 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9ea0a8; }
+  .tweaks-panel .row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .tweaks-panel .row:last-child { margin-bottom: 0; }
+  .tweaks-panel label { font-size: 11px; color: #9ea0a8; }
+  .tweaks-panel .seg { display: flex; background: #27272a; border-radius: 6px; padding: 2px; }
+  .tweaks-panel .seg button {
+    flex: 1; border: 0; background: transparent; color: #c7c7cc;
+    padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .tweaks-panel .seg button.on { background: #3f3f46; color: #fff; }
+
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    window.__TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "theme": "dark"
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="src/data.jsx"></script>
+  <script type="text/babel" src="src/icons.jsx"></script>
+  <script type="text/babel" src="src/chrome.jsx"></script>
+  <script type="text/babel" src="src/brand.jsx"></script>
+  <script type="text/babel" src="src/screens/dashboard.jsx"></script>
+  <script type="text/babel" src="src/screens/reservation-list.jsx"></script>
+  <script type="text/babel" src="src/screens/reservation-detail.jsx"></script>
+  <script type="text/babel" src="src/screens/rooms.jsx"></script>
+  <script type="text/babel" src="src/screens/guest-profile.jsx"></script>
+  <script type="text/babel" src="src/screens/onboarding.jsx"></script>
+  <script type="text/babel" src="src/screens/reservation-create.jsx"></script>
+  <script type="text/babel" src="src/screens/audit-log.jsx"></script>
+  <script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>

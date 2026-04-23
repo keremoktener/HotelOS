@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const [tenant, roomTypes, rooms] = await Promise.all([
     db.tenant.findUnique({ where: { id: tenantId } }),
     db.roomType.findMany({ where: { tenantId }, orderBy: { name: 'asc' } }),
-    db.room.findMany({ where: { tenantId }, include: { type: true }, orderBy: [{ floor: 'asc' }, { number: 'asc' }] }),
+    db.room.findMany({ where: { tenantId }, include: { roomType: true }, orderBy: [{ floor: 'asc' }, { number: 'asc' }] }),
   ])
 
   return (
@@ -85,7 +85,7 @@ export default async function SettingsPage() {
               {rooms.map(r => (
                 <tr key={r.id}>
                   <td className="py-2 font-medium">{r.number}</td>
-                  <td className="py-2 text-gray-600">{r.type.name}</td>
+                  <td className="py-2 text-gray-600">{r.roomType.name}</td>
                   <td className="py-2 text-gray-600">{r.floor ?? '—'}</td>
                   <td className="py-2">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${

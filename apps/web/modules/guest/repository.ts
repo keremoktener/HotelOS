@@ -25,7 +25,7 @@ export async function getGuestById(tenantId: string, id: string) {
     include: {
       reservations: {
         orderBy: { checkIn: 'desc' },
-        include: { room: { include: { type: true } }, payments: true },
+        include: { room: { include: { roomType: true } }, payments: true },
       },
     },
   })
