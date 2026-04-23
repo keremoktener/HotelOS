@@ -1,0 +1,22 @@
+{
+  "name": "hotelos",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "test": "npm run test --workspace=apps/web",
+    "db:push": "npx prisma@5 db push --schema=prisma/schema.prisma",
+    "db:migrate": "npx prisma@5 migrate dev --schema=prisma/schema.prisma",
+    "db:studio": "npx prisma@5 studio --schema=prisma/schema.prisma",
+    "db:generate": "npx prisma@5 generate --schema=prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}

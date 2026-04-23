@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# Production build
+apps/web/build/
+
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.*.local
+apps/web/.env
+apps/web/.env.local
+apps/web/.env.*.local
+
+# Prisma generated migrations (keep schema.prisma)
+prisma/migrations/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Misc
+.turbo/
+*.tsbuildinfo

@@ -1,0 +1,125 @@
+{
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "create": "Oluştur",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "loading": "Yükleniyor...",
+    "noResults": "Sonuç bulunamadı.",
+    "confirm": "Onayla",
+    "back": "Geri",
+    "next": "İleri",
+    "all": "Tümü",
+    "yes": "Evet",
+    "no": "Hayır",
+    "close": "Kapat",
+    "required": "Zorunlu alan",
+    "optional": "İsteğe bağlı",
+    "total": "Toplam",
+    "status": "Durum",
+    "date": "Tarih",
+    "notes": "Notlar",
+    "actions": "İşlemler"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "reservations": "Rezervasyonlar",
+    "housekeeping": "Kat Hizmetleri",
+    "maintenance": "Teknik Servis",
+    "fnb": "F&B",
+    "accounting": "Muhasebe",
+    "hr": "İnsan Kaynakları",
+    "sales": "Satış",
+    "crm": "CRM",
+    "reports": "Raporlar",
+    "agency": "Acente",
+    "settings": "Ayarlar"
+  },
+  "reservation": {
+    "title": "Rezervasyonlar",
+    "new": "Yeni Rezervasyon",
+    "guest": "Misafir",
+    "room": "Oda",
+    "checkIn": "Giriş",
+    "checkOut": "Çıkış",
+    "adults": "Yetişkin",
+    "children": "Çocuk",
+    "totalPrice": "Toplam Tutar",
+    "notes": "Notlar",
+    "specialRequests": "Özel İstekler",
+    "status": {
+      "WAITING": "Bekliyor",
+      "CONFIRMED": "Onaylandı",
+      "CHECKEDIN": "Girişte",
+      "CHECKEDOUT": "Çıkış Yapıldı",
+      "CANCELLED": "İptal Edildi",
+      "NOSHOW": "Gelmedi"
+    },
+    "actions": {
+      "checkIn": "Giriş Yap",
+      "checkOut": "Çıkış Yap",
+      "cancel": "İptal Et",
+      "sendSignature": "İmza Linki Gönder",
+      "addPayment": "Ödeme Ekle"
+    },
+    "price": {
+      "preview": "Fiyat Hesaplama",
+      "perNight": "Gecelik",
+      "nights": "Gece",
+      "multiplier": "Çarpan",
+      "agencyDiscount": "Acente İndirimi",
+      "total": "Toplam Fiyat"
+    },
+    "errors": {
+      "roomFaulty": "Oda arızalı — giriş yapılamaz.",
+      "roomDirty": "Oda temizlenmemiş — giriş yapılamaz.",
+      "guestBlacklisted": "Misafir kara listede — rezervasyon oluşturulamaz."
+    }
+  },
+  "room": {
+    "title": "Odalar",
+    "number": "Oda No",
+    "type": "Oda Tipi",
+    "floor": "Kat",
+    "view": "Manzara",
+    "features": "Özellikler",
+    "status": {
+      "CLEAN": "Temiz",
+      "DIRTY": "Kirli",
+      "FAULTY": "Arızalı",
+      "DND": "Rahatsız Etme"
+    }
+  },
+  "guest": {
+    "title": "Misafirler",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "tcId": "TC Kimlik No",
+    "passportNo": "Pasaport No",
+    "phone": "Telefon",
+    "email": "E-posta",
+    "nationality": "Uyruk",
+    "dateOfBirth": "Doğum Tarihi",
+    "kvkkConsent": "KVKK Onayı",
+    "blacklisted": "Kara Listede",
+    "blacklistReason": "Kara Liste Nedeni",
+    "history": "Geçmiş Rezervasyonlar"
+  },
+  "dashboard": {
+    "occupancy": "Doluluk Oranı",
+    "todayArrivals": "Bugün Giriş",
+    "todayDepartures": "Bugün Çıkış",
+    "urgentFaults": "Acil Arızalar",
+    "expected": "beklenen",
+    "pending": "bekleyen"
+  },
+  "errors": {
+    "unauthorized": "Bu işlem için yetkiniz yok.",
+    "notFound": "Kayıt bulunamadı.",
+    "serverError": "Sunucu hatası. Lütfen tekrar deneyin.",
+    "validationError": "Lütfen tüm zorunlu alanları doldurun."
+  }
+}

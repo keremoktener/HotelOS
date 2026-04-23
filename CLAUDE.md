@@ -186,3 +186,126 @@ npx @claude-flow/cli@latest doctor --fix
 
 - Documentation: https://github.com/ruvnet/claude-flow
 - Issues: https://github.com/ruvnet/claude-flow/issues
+
+---
+
+# HotelOS Project Memory
+
+## Project Overview
+HotelOS is a multi-tenant SaaS hotel management platform built with Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, tRPC, Prisma, and PostgreSQL. Authentication via Clerk (org-per-tenant). Background jobs via BullMQ + Redis. Architecture: modular monolith designed for future microservice extraction. Deployment: Vercel (frontend) + Railway (DB/workers). Turkish UI, English codebase. KVKK-compliant (deploy Azure Turkey or AWS Frankfurt).
+
+## Architectural Rules (Non-Negotiable)
+- All money stored as integers in kuruş (TRY cents). Use formatCurrency() for display.
+- All dates stored as UTC. Display in Europe/Istanbul timezone using Day.js.
+- Every repository function receives tenantId as first arg. Always filter by it.
+- Modules never import each other's repository files. Use module router interfaces only.
+- All inputs validated with Zod. Schemas defined in module/types.ts, shared client+server.
+- Every mutation logged to AuditLog via Prisma middleware (tenantId, userId, entity, diff).
+- Never log PII (TC ID, passport, full name, card data) in production logs.
+- Every tRPC procedure calls ctx.requireTenant() as first line.
+- No raw SQL. Prisma query builder only in repository.ts files.
+- All user-facing strings in /messages/tr.json. Use next-intl. No hardcoded Turkish text in components.
+
+## Modules
+1. Reservation   — rooms, guests, bookings, check-in/out, e-signature, KBS notification
+2. Housekeeping  — room/area cleaning tasks, photos, checklists, lost & found, linen
+3. Maintenance   — fault reports, equipment registry, preventive maintenance
+4. F&B           — menus, allergens, recipes, food cost, name tags
+5. Accounting    — stock, GIB e-invoices, warehouse, payables, cash flow, fixed assets
+6. HR            — employees, shifts, leave, payroll (SGK/tax brackets), training
+7. Sales         — virtual POS (adapter per bank), payment links, refunds, packages
+8. Agency        — contracts, price calendar, multipliers, kickback, price audit
+9. CRM           — surveys, reviews, complaints (OCR), blacklist, segmentation
+10. Reporting    — 19 reports (screen + Excel/PDF export)
+
+## Integrations
+- GIB e-invoice/e-dispatch: adapter in lib/integrations/gib/ (never raw XML/SOAP)
+- Jandarma KBS: adapter in lib/integrations/jandarma/ (BullMQ job, 5 min after check-in)
+- Virtual POS: VirtualPOSAdapter interface, one file per bank in lib/integrations/pos/
+- Netgsm SMS/WhatsApp: adapter in lib/integrations/sms/ (always async via BullMQ)
+- OCR (complaint book): Azure Vision or Google Vision in lib/integrations/ocr/
+
+## Current Phase
+Phase 1 — Foundation (complete 2026-04-23)
+## Phase 1 started: 2026-04-23
+## Phase 1 completed: 2026-04-23
+
+## Progress Tracker
+
+### Phase 1 — Foundation
+✓ Repo setup: Next.js 14 + TypeScript + Tailwind + shadcn/ui + Prisma + PostgreSQL
+✓ Clerk integration: org-based multi-tenancy, user sync webhook, role mapping
+✓ Tenant onboarding flow: create org → Tenant row → setup wizard
+✓ Core DB schema: Tenant, User, Room, RoomType, Guest, Reservation, AuditLog (+ full schema for all phases)
+✓ Reservation module: full CRUD, price calculation, list with filters
+✓ Room status management: CLEAN / DIRTY / FAULTY / DND with fault detail
+✓ Guest module: create, search, profile with reservation history
+✓ Audit log middleware: auto-log all mutations via Prisma middleware (lib/db/audit-middleware.ts)
+✓ Basic dashboard: occupancy summary, today's arrivals/departures
+
+### Phase 2 — Payments & Agency
+☐ Virtual POS adapter interface + Garanti BBVA implementation
+☐ Payment link generation and 3D Secure callback flow
+☐ Manual payment recording (cash, wire, physical POS)
+☐ Refund management with dual-date tracking
+☐ Agency module: CRUD, commission/discount/kickback config
+☐ Price calendar: date-range pricing, multiplier matrix
+☐ Price preview endpoint
+☐ Electronic signature: link generation, signing page, storage
+☐ WhatsApp/SMS/email sending via Netgsm
+
+### Phase 3 — Operations
+☐ HK module: task creation, assignment, photo upload, completion validation
+☐ HK common area scheduling (BullMQ daily cron)
+☐ HK daily report generation and email delivery
+☐ Lost & found module
+☐ Linen tracking
+☐ Maintenance module: fault reports (full CRUD, priority, cannot-fix workflow)
+☐ Equipment registry with warranty tracking
+☐ Preventive maintenance scheduling
+☐ External service firm registry and visit log
+☐ F&B: menu management, allergen tagging, auto-name-tag generation
+☐ KBS integration: guests (check-in) and employees
+
+### Phase 4 — Accounting & HR
+☐ Stock item management with barcode support
+☐ Warehouse hierarchy (main + department + sub)
+☐ Purchase and sale invoice management
+☐ GIB e-invoice integration (inbox sync + outbox send)
+☐ Department request workflow (PENDING → APPROVED/REJECTED/MODIFIED)
+☐ Inter-warehouse transfer slips
+☐ Fixed asset register with depreciation
+☐ Cash account management and transaction ledger
+☐ VAT summary report
+☐ HR: employee lifecycle, duplicate detection
+☐ Shift management with conflict detection
+☐ Leave request workflow
+☐ Payroll calculation engine (configurable SGK/tax rates)
+☐ Payslip PDF generation
+☐ Discipline records and training/certificate tracking
+
+### Phase 5 — CRM, Reporting & Design
+☐ Checkout survey gate (blocking + bypassable)
+☐ External review import (link-based, manual guest linking)
+☐ Complaint book: photo → OCR → translate → pre-fill
+☐ Guest segmentation (VIP, first-timer, loyal)
+☐ Guest blacklist with reservation blocking
+☐ Birthday/special day reminders (BullMQ cron)
+☐ All 19 reports (screen views)
+☐ Excel / PDF export for all reports
+☐ Yield management chart (occupancy vs price trend)
+☐ Document designer (invoice, payslip, contract, HK report, name tag)
+☐ Price audit report with Excel export
+☐ Marketing export (Facebook/Google compatible CSV)
+
+### Phase 6 — Polish, Security & Launch
+☐ End-to-end tests (Playwright) for all critical flows
+☐ Unit tests (Vitest) for all service and calculation functions
+☐ Database indexes on all FK and filter columns
+☐ Rate limiting on all API routes (Upstash Redis)
+☐ KVKK compliance audit (consent flags, data export, right-to-erasure)
+☐ Super admin panel (tenant list, module toggle, impersonation)
+☐ Billing integration (Stripe or Iyzico)
+☐ Onboarding documentation for hotel staff
+☐ CI/CD pipeline: GitHub Actions → Vercel + Railway
+☐ Monitoring: Sentry + Axiom/Grafana

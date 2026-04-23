@@ -1,0 +1,815 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  MANAGER
+  STAFF
+  TECHNICIAN
+  HK
+  ACCOUNTING
+}
+
+enum RoomStatus {
+  CLEAN
+  DIRTY
+  FAULTY
+  DND
+}
+
+enum ReservationStatus {
+  WAITING
+  CONFIRMED
+  CHECKEDIN
+  CHECKEDOUT
+  CANCELLED
+  NOSHOW
+}
+
+enum PaymentMethod {
+  CASH
+  WIRE
+  VIRTUALPOS
+  PHYSICALPOS
+}
+
+enum SignatureType {
+  KVKK
+  CONTRACT
+}
+
+enum HKTaskType {
+  ROOM
+  COMMON_AREA
+}
+
+enum HKTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum FaultPriority {
+  URGENT
+  NORMAL
+  LOW
+}
+
+enum FaultStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANNOT_FIX
+}
+
+enum WarehouseType {
+  MAIN
+  DEPARTMENT
+  SUB
+}
+
+enum InvoiceType {
+  PURCHASE
+  SALE
+}
+
+enum DepartmentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MODIFIED
+}
+
+enum CashAccountType {
+  CASH
+  BANK
+  VIRTUALPOS
+  PHYSICALPOS
+}
+
+enum TransactionDirection {
+  IN
+  OUT
+}
+
+enum ShiftType {
+  NORMAL
+  OVERTIME
+  HOLIDAY
+}
+
+enum LeaveType {
+  ANNUAL
+  EXCUSED
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ComplaintStatus {
+  OPEN
+  RESOLVED
+}
+
+// ─── Core / Shared ────────────────────────────────────────────────────────────
+
+model Tenant {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  plan          String   @default("starter")
+  activeModules String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model User {
+  id         String   @id @default(uuid())
+  clerkId    String   @unique
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  role       UserRole
+  department String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  diff      Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+// ─── Reservation Module ───────────────────────────────────────────────────────
+
+model RoomType {
+  id                String   @id @default(uuid())
+  tenantId          String
+  name              String
+  capacity          Int
+  basePrice         Int
+  minPhotosRequired Int      @default(2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  rooms        Room[]
+  hkChecklists HKChecklist[]
+
+  @@index([tenantId])
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  tenantId    String
+  number      String
+  typeId      String
+  roomType    RoomType   @relation(fields: [typeId], references: [id])
+  floor       Int?
+  view        String?
+  features    Json       @default("[]")
+  status      RoomStatus @default(CLEAN)
+  faultDetail String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  reservations   Reservation[]
+  hkTasks        HKTask[]
+  lostAndFound   LostAndFound[]
+  linenTrackings LinenTracking[]
+
+  @@index([tenantId])
+}
+
+model Guest {
+  id               String    @id @default(uuid())
+  tenantId         String
+  firstName        String
+  lastName         String
+  tcId             String?
+  passportNo       String?
+  phone            String?
+  email            String?
+  nationality      String?
+  dateOfBirth      DateTime?
+  kvkkConsent      Boolean   @default(false)
+  blacklisted      Boolean   @default(false)
+  blacklistReason  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  reservations  Reservation[]
+  surveys       Survey[]
+  complaints    GuestComplaint[]
+  lostAndFound  LostAndFound[]
+
+  @@index([tenantId])
+}
+
+model Reservation {
+  id                      String            @id @default(uuid())
+  tenantId                String
+  guestId                 String
+  guest                   Guest             @relation(fields: [guestId], references: [id])
+  roomId                  String
+  room                    Room              @relation(fields: [roomId], references: [id])
+  agencyId                String?
+  checkIn                 DateTime
+  checkOut                DateTime
+  adults                  Int               @default(1)
+  children                Int               @default(0)
+  status                  ReservationStatus @default(WAITING)
+  totalPrice              Int
+  notes                   String?
+  specialRequests         String?
+  kbsNotificationStatus   String?
+  kbsNotificationCode     String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  payments   ReservationPayment[]
+  signatures ElectronicSignature[]
+  surveys    Survey[]
+
+  @@index([tenantId])
+}
+
+model ReservationPayment {
+  id            String        @id @default(uuid())
+  reservationId String
+  reservation   Reservation   @relation(fields: [reservationId], references: [id])
+  amount        Int
+  method        PaymentMethod
+  paidAt        DateTime
+  reference     String?
+  createdAt     DateTime      @default(now())
+
+  @@index([reservationId])
+}
+
+model ElectronicSignature {
+  id            String        @id @default(uuid())
+  reservationId String
+  reservation   Reservation   @relation(fields: [reservationId], references: [id])
+  type          SignatureType
+  signedAt      DateTime?
+  fileUrl       String?
+  ipAddress     String?
+  token         String        @unique
+  createdAt     DateTime      @default(now())
+
+  @@index([reservationId])
+}
+
+// ─── Housekeeping Module ──────────────────────────────────────────────────────
+
+model HKTask {
+  id               String       @id @default(uuid())
+  tenantId         String
+  roomId           String?
+  room             Room?        @relation(fields: [roomId], references: [id])
+  type             HKTaskType   @default(ROOM)
+  assignedUserId   String?
+  status           HKTaskStatus @default(PENDING)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  durationMinutes  Int?
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  photos HKPhoto[]
+
+  @@index([tenantId])
+}
+
+model HKPhoto {
+  id      String   @id @default(uuid())
+  taskId  String
+  task    HKTask   @relation(fields: [taskId], references: [id])
+  url     String
+  takenAt DateTime
+
+  @@index([taskId])
+}
+
+model HKChecklist {
+  id         String   @id @default(uuid())
+  tenantId   String
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
+  items      Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model CommonArea {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  name                  String
+  cleaningFrequencyDays Int      @default(1)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  schedules CommonAreaSchedule[]
+
+  @@index([tenantId])
+}
+
+model CommonAreaSchedule {
+  id               String     @id @default(uuid())
+  commonAreaId     String
+  commonArea       CommonArea @relation(fields: [commonAreaId], references: [id])
+  scheduledDate    DateTime
+  completedAt      DateTime?
+  assignedUserId   String?
+  createdAt        DateTime   @default(now())
+
+  @@index([commonAreaId])
+}
+
+model LostAndFound {
+  id          String    @id @default(uuid())
+  tenantId    String
+  roomId      String?
+  room        Room?     @relation(fields: [roomId], references: [id])
+  description String
+  foundBy     String
+  foundAt     DateTime
+  returnedAt  DateTime?
+  guestId     String?
+  guest       Guest?    @relation(fields: [guestId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+model LinenTracking {
+  id            String   @id @default(uuid())
+  tenantId      String
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id])
+  sentCount     Int
+  returnedCount Int
+  date          DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+// ─── Maintenance Module ───────────────────────────────────────────────────────
+
+model FaultReport {
+  id               String       @id @default(uuid())
+  tenantId         String
+  location         String
+  description      String
+  reportedBy       String
+  assignedTo       String?
+  priority         FaultPriority @default(NORMAL)
+  status           FaultStatus  @default(OPEN)
+  cannotFixReason  String?
+  resolvedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([tenantId])
+}
+
+model Equipment {
+  id              String    @id @default(uuid())
+  tenantId        String
+  name            String
+  category        String
+  serialNo        String?
+  purchaseDate    DateTime?
+  warrantyExpiry  DateTime?
+  lastServiceDate DateTime?
+  nextServiceDate DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  preventiveMaintenance PreventiveMaintenance[]
+
+  @@index([tenantId])
+}
+
+model PreventiveMaintenance {
+  id            String    @id @default(uuid())
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
+  scheduledDate DateTime
+  completedAt   DateTime?
+  technicianId  String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  @@index([equipmentId])
+}
+
+model ExternalServiceFirm {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String
+  specialty String?
+  createdAt DateTime @default(now())
+
+  serviceVisits ServiceVisit[]
+
+  @@index([tenantId])
+}
+
+model ServiceVisit {
+  id          String              @id @default(uuid())
+  tenantId    String
+  firmId      String
+  firm        ExternalServiceFirm @relation(fields: [firmId], references: [id])
+  visitDate   DateTime
+  description String
+  invoiceId   String?
+  createdAt   DateTime            @default(now())
+
+  @@index([tenantId])
+}
+
+// ─── Accounting Module ────────────────────────────────────────────────────────
+
+model StockItem {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  unit         String
+  category     String
+  barcode      String?
+  currentStock Int      @default(0)
+  minStock     Int      @default(0)
+  lastPrice    Int      @default(0)
+  vatRate      Int      @default(20)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Warehouse {
+  id        String        @id @default(uuid())
+  tenantId  String
+  name      String
+  type      WarehouseType @default(MAIN)
+  parentId  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([tenantId])
+}
+
+model Invoice {
+  id             String      @id @default(uuid())
+  tenantId       String
+  type           InvoiceType
+  supplierId     String?
+  warehouseId    String?
+  date           DateTime
+  totalAmount    Int
+  vatAmount      Int
+  gibStatus      String?
+  gibEnvelopeId  String?
+  lines          Json
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([tenantId])
+}
+
+model DepartmentRequest {
+  id           String                  @id @default(uuid())
+  tenantId     String
+  requestedBy  String
+  warehouseId  String
+  status       DepartmentRequestStatus @default(PENDING)
+  items        Json
+  note         String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([tenantId])
+}
+
+model WarehouseTransfer {
+  id              String   @id @default(uuid())
+  tenantId        String
+  fromWarehouseId String
+  toWarehouseId   String
+  items           Json
+  transferredAt   DateTime
+  transferredBy   String
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model FixedAsset {
+  id                String   @id @default(uuid())
+  tenantId          String
+  name              String
+  purchasePrice     Int
+  purchaseDate      DateTime
+  depreciationYears Int
+  currentValue      Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model CashAccount {
+  id        String          @id @default(uuid())
+  tenantId  String
+  name      String
+  type      CashAccountType
+  balance   Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  transactions Transaction[]
+
+  @@index([tenantId])
+}
+
+model Transaction {
+  id                          String               @id @default(uuid())
+  tenantId                    String
+  accountId                   String
+  account                     CashAccount          @relation(fields: [accountId], references: [id])
+  amount                      Int
+  direction                   TransactionDirection
+  category                    String
+  reference                   String?
+  relatedInvoiceId            String?
+  relatedReservationPaymentId String?
+  manualEntryReason           String?
+  date                        DateTime
+  createdAt                   DateTime             @default(now())
+
+  @@index([tenantId])
+}
+
+// ─── HR Module ────────────────────────────────────────────────────────────────
+
+model Employee {
+  id           String    @id @default(uuid())
+  tenantId     String
+  userId       String?
+  firstName    String
+  lastName     String
+  tcId         String?
+  phone        String?
+  department   String
+  position     String
+  startDate    DateTime
+  endDate      DateTime?
+  isActive     Boolean   @default(true)
+  contractType String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  shifts            Shift[]
+  leaveRequests     LeaveRequest[]
+  payrolls          Payroll[]
+  disciplineRecords DisciplineRecord[]
+  trainings         Training[]
+
+  @@index([tenantId])
+}
+
+model Shift {
+  id                    String    @id @default(uuid())
+  tenantId              String
+  employeeId            String
+  employee              Employee  @relation(fields: [employeeId], references: [id])
+  date                  DateTime
+  startTime             DateTime
+  endTime               DateTime
+  type                  ShiftType @default(NORMAL)
+  kbsNotificationStatus String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+model LeaveRequest {
+  id         String      @id @default(uuid())
+  tenantId   String
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  type       LeaveType
+  startDate  DateTime
+  endDate    DateTime
+  status     LeaveStatus @default(PENDING)
+  approvedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([tenantId])
+}
+
+model Payroll {
+  id           String   @id @default(uuid())
+  tenantId     String
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  month        Int
+  year         Int
+  baseSalary   Int
+  overtime     Int      @default(0)
+  bonus        Int      @default(0)
+  deductions   Int      @default(0)
+  grossSalary  Int
+  netSalary    Int
+  sgkEmployee  Int
+  sgkEmployer  Int
+  incomeTax    Int
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model DisciplineRecord {
+  id          String   @id @default(uuid())
+  tenantId    String
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  type        String
+  description String
+  date        DateTime
+  documentUrl String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model Training {
+  id             String    @id @default(uuid())
+  tenantId       String
+  employeeId     String
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  name           String
+  completedAt    DateTime
+  expiryDate     DateTime?
+  certificateUrl String?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId])
+}
+
+// ─── Agency & Pricing ─────────────────────────────────────────────────────────
+
+model Agency {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  name               String
+  commissionRate     Int
+  extraDiscount      Int      @default(0)
+  kickbackThreshold  Int      @default(0)
+  kickbackRate       Int      @default(0)
+  contractUrl        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model PriceCalendar {
+  id             String   @id @default(uuid())
+  tenantId       String
+  agencyId       String?
+  startDate      DateTime
+  endDate        DateTime
+  pricePerNight  Int
+  createdBy      String
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model MultiplierMatrix {
+  id         String   @id @default(uuid())
+  tenantId   String
+  persons    Int
+  multiplier Int
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model ReservationPriceCheck {
+  id            String   @id @default(uuid())
+  reservationId String   @unique
+  expectedPrice Int
+  actualPrice   Int
+  isCorrect     Boolean
+  checkedAt     DateTime
+  createdAt     DateTime @default(now())
+}
+
+// ─── CRM & Survey ─────────────────────────────────────────────────────────────
+
+model Survey {
+  id               String      @id @default(uuid())
+  tenantId         String
+  reservationId    String
+  reservation      Reservation @relation(fields: [reservationId], references: [id])
+  guestId          String
+  guest            Guest       @relation(fields: [guestId], references: [id])
+  ratings          Json
+  comment          String?
+  submittedAt      DateTime?
+  isCheckoutSurvey Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+
+  @@index([tenantId])
+}
+
+model ExternalReview {
+  id           String   @id @default(uuid())
+  tenantId     String
+  guestId      String?
+  platform     String
+  reviewerName String
+  rating       Float
+  comment      String
+  reviewDate   DateTime
+  sourceUrl    String?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model GuestComplaint {
+  id            String          @id @default(uuid())
+  tenantId      String
+  guestId       String
+  guest         Guest           @relation(fields: [guestId], references: [id])
+  reservationId String?
+  description   String
+  status        ComplaintStatus @default(OPEN)
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([tenantId])
+}
+
+model GuestSegment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  rules     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+model TenantSettings {
+  id                          String   @id @default(uuid())
+  tenantId                    String   @unique
+  noShowPolicyHours           Int      @default(24)
+  noShowFeePercent            Int      @default(0)
+  hkReportTime                String   @default("09:00")
+  surveyGateEnabled           Boolean  @default(true)
+  sgkEmployeeRate             Int      @default(1400)
+  sgkEmployerRate             Int      @default(2050)
+  checkoutSurveyGateEnabled   Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
