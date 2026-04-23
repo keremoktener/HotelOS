@@ -43,7 +43,7 @@ export function GuestList({ title, reservations, type }: {
   reservations: Array<{
     id: string
     guest: { firstName: string; lastName: string }
-    room: { number: string; type: { name: string } }
+    room: { number: string; roomType: { name: string } }
   }>
   type: 'arrival' | 'departure'
 }) {
@@ -60,7 +60,7 @@ export function GuestList({ title, reservations, type }: {
                 {r.guest.firstName} {r.guest.lastName}
               </span>
               <span className="text-gray-500">
-                Oda {r.room.number} — {r.room.type.name}
+                Oda {r.room.number} — {r.room.roomType.name}
               </span>
             </li>
           ))}

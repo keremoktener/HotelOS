@@ -16,12 +16,12 @@ async function getDashboardData(tenantId: string) {
     db.room.groupBy({ by: ['status'], where: { tenantId }, _count: true }),
     db.reservation.findMany({
       where: { tenantId, checkIn: { gte: today, lt: tomorrow }, status: { in: ['WAITING', 'CONFIRMED'] } },
-      include: { guest: true, room: { include: { type: true } } },
+      include: { guest: true, room: { include: { roomType: true } } },
       orderBy: { checkIn: 'asc' },
     }),
     db.reservation.findMany({
       where: { tenantId, checkOut: { gte: today, lt: tomorrow }, status: 'CHECKEDIN' },
-      include: { guest: true, room: { include: { type: true } } },
+      include: { guest: true, room: { include: { roomType: true } } },
       orderBy: { checkOut: 'asc' },
     }),
     db.faultReport.count({ where: { tenantId, priority: 'URGENT', status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
