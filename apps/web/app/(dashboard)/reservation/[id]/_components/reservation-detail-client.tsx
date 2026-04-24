@@ -66,10 +66,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 interface Payment { id: string; amount: number; method: string; reference: string; createdAt: string }
 interface Reservation {
   id: string; status: string; totalPrice: number; paidAmount: number
-  checkIn: string; checkOut: string; adults: number; children: number; notes: string
+  checkIn: string; checkOut: string; adults: number; children: number; notes: string; specialRequests: string
   guest: { id: string; firstName: string; lastName: string; phone: string; email: string; nationality: string; tcId: string | null; passportNo: string | null }
   room: { id: string; number: string; floor: number | null; status: string; faultNote: string | null; roomType: { name: string; capacity: number } } | null
   payments: Payment[]
+}
+
+function parseDiscount(s: string): { pct: number; reason: string } | null {
+  const m = s.match(/^\[%(\d+) indirim: ([^\]]+)\]/)
+  return m ? { pct: Number(m[1]), reason: m[2] } : null
 }
 interface AvailableRoom { id: string; number: string; floor: number | null; status: string; roomTypeName: string }
 
@@ -94,8 +99,9 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
   const [editDiscountPct, setEditDiscountPct] = useState('')
   const [editDiscountReason, setEditDiscountReason] = useState('')
   const [editError, setEditError] = useState('')
+  const [showEarlyCheckIn, setShowEarlyCheckIn] = useState(false)
 
-  const discountPctNum = Number(editDiscountPct) || 0
+  const discountPctNum = Math.min(100, Math.max(0, Number(editDiscountPct) || 0))
   const discountedTotal = discountPctNum > 0 ? Math.round(r.totalPrice * (1 - discountPctNum / 100)) : r.totalPrice
 
   function onSuccess() { router.refresh() }
@@ -154,6 +160,33 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
+      {/* Early check-in confirmation modal */}
+      {showEarlyCheckIn && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 12, padding: 24, width: 360, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 999, background: 'var(--warn-bg)', color: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>!</div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)', marginBottom: 8 }}>Erken giriş onayı</div>
+            <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: 20 }}>
+              Planlanan giriş tarihi <b>{trDate(r.checkIn)}</b> henüz gelmedi. Bu misafiri şimdi giriş yapmak istiyor musunuz?
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { setShowEarlyCheckIn(false); checkInMut.mutate({ id: r.id }) }}
+                style={{ flex: 1, padding: '9px', background: 'var(--good)', color: '#fff', border: 0, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Evet, giriş yap
+              </button>
+              <button
+                onClick={() => setShowEarlyCheckIn(false)}
+                style={{ flex: 1, padding: '9px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => { router.refresh(); router.push('/reservation') }}
         style={{ background: 'none', border: '1px solid var(--border-c)', borderRadius: 6, padding: '5px 10px', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', marginBottom: 16 }}
@@ -229,7 +262,7 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, marginBottom: discountPctNum > 0 ? 12 : 0 }}>
             <Field label="İndirim (%)">
-              <input type="number" min={0} max={100} style={inputStyle} value={editDiscountPct} onChange={e => setEditDiscountPct(e.target.value)} placeholder="0"/>
+              <input type="number" min={0} max={100} style={inputStyle} value={editDiscountPct} onChange={e => { const v = Math.min(100, Math.max(0, Number(e.target.value) || 0)); setEditDiscountPct(v === 0 ? '' : String(v)) }} placeholder="0"/>
             </Field>
             {discountPctNum > 0 && (
               <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 1 }}>
@@ -277,20 +310,41 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
           </div>
 
           {/* Price */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-c)', fontWeight: 600, fontSize: 14 }}>Fiyat</div>
-            <div style={{ padding: 16 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>
-                  <tr><td style={{ padding: '7px 0', fontSize: 13, color: 'var(--text-2)' }}>{nights} gece</td><td style={{ padding: '7px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}></td></tr>
-                  <tr style={{ borderTop: '1px solid var(--border-c)' }}>
-                    <td style={{ padding: '10px 0 0', fontWeight: 600, fontSize: 13 }}>Toplam</td>
-                    <td style={{ padding: '10px 0 0', textAlign: 'right', fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{formatCurrency(r.totalPrice)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {(() => {
+            const disc = parseDiscount(r.specialRequests)
+            const originalPrice = disc ? Math.round(r.totalPrice * 100 / (100 - disc.pct)) : null
+            const discountAmount = originalPrice ? originalPrice - r.totalPrice : 0
+            return (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-c)', fontWeight: 600, fontSize: 14 }}>Fiyat</div>
+                <div style={{ padding: 16 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '7px 0', fontSize: 13, color: 'var(--text-2)' }}>{nights} gece</td>
+                        <td style={{ padding: '7px 0', textAlign: 'right', fontSize: 13, color: 'var(--text-2)' }}>{disc ? <s style={{ color: 'var(--text-3)' }}>{formatCurrency(originalPrice!)}</s> : ''}</td>
+                      </tr>
+                      {disc && (
+                        <tr>
+                          <td style={{ padding: '5px 0', fontSize: 12 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 8px', borderRadius: 999, background: 'var(--good-bg)', color: 'var(--good)', fontWeight: 500 }}>
+                              %{disc.pct} indirim
+                            </span>
+                            <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-3)' }}>{disc.reason}</span>
+                          </td>
+                          <td style={{ padding: '5px 0', textAlign: 'right', fontSize: 13, color: 'var(--good)', fontWeight: 500 }}>−{formatCurrency(discountAmount)}</td>
+                        </tr>
+                      )}
+                      <tr style={{ borderTop: '1px solid var(--border-c)' }}>
+                        <td style={{ padding: '10px 0 0', fontWeight: 600, fontSize: 13 }}>Toplam</td>
+                        <td style={{ padding: '10px 0 0', textAlign: 'right', fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{formatCurrency(r.totalPrice)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Payments */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
@@ -334,7 +388,14 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
                   </button>
                 )}
                 {canCheckIn && (
-                  <button onClick={() => checkInMut.mutate({ id: r.id })} disabled={busy} style={{ ...btnBase, background: 'var(--good)', color: '#fff' }}>
+                  <button
+                    onClick={() => {
+                      const today = new Date(); today.setHours(0, 0, 0, 0)
+                      const arrival = new Date(r.checkIn); arrival.setHours(0, 0, 0, 0)
+                      if (arrival > today) { setShowEarlyCheckIn(true); return }
+                      checkInMut.mutate({ id: r.id })
+                    }}
+                    disabled={busy} style={{ ...btnBase, background: 'var(--good)', color: '#fff' }}>
                     {checkInMut.isPending ? 'İşleniyor…' : '✓ Giriş yap'}
                   </button>
                 )}

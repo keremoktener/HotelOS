@@ -43,6 +43,7 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
     checkIn: reservation.checkIn.toISOString(), checkOut: reservation.checkOut.toISOString(),
     adults: reservation.adults, children: reservation.children ?? 0,
     notes: reservation.notes ?? '',
+    specialRequests: reservation.specialRequests ?? '',
     guest: {
       id: reservation.guest.id, firstName: reservation.guest.firstName, lastName: reservation.guest.lastName,
       phone: reservation.guest.phone ?? '', email: reservation.guest.email ?? '',
