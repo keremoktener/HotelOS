@@ -5,6 +5,8 @@ import { db } from '@/lib/db'
 import { PageHeader } from '@/components/layout/page-header'
 import { GuestsClient } from './_components/guests-client'
 
+export const dynamic = 'force-dynamic'
+
 export default async function GuestsPage() {
   const { userId, orgId } = await auth()
   if (!userId) redirect('/sign-in')

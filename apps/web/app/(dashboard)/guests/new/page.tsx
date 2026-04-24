@@ -71,7 +71,7 @@ export default function GuestNewPage() {
   const [error, setError]           = useState('')
 
   const createGuest = trpc.guest.create.useMutation({
-    onSuccess: (data) => { router.push(`/guests/${data.id}`) },
+    onSuccess: (data) => { router.refresh(); router.push(`/guests/${data.id}`) },
     onError: (err) => { setError(err.message) },
   })
 

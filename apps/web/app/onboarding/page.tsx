@@ -65,6 +65,7 @@ export default function OnboardingPage() {
   const [singleNum, setSingleNum] = useState('')
   const [singleFloor, setSingleFloor] = useState('')
   const [singleType, setSingleType] = useState('')
+  const [bulkSkipped, setBulkSkipped] = useState(0)
   // Bulk edit selection
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [beFloor, setBeFloor] = useState('')
@@ -108,6 +109,7 @@ export default function OnboardingPage() {
         added.push({ id: uid(), number: num, floor: bulkFloor ? Number(bulkFloor) : undefined, typeDraftId: bulkType })
     }
     setRooms(p => [...p, ...added])
+    setBulkSkipped(to - from + 1 - added.length)
     setBulkFrom(''); setBulkTo(''); setBulkFloor('')
   }
 
@@ -272,21 +274,26 @@ export default function OnboardingPage() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, marginBottom: 10 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12 }}>Toplu oluştur</div>
           <div style={{ display: 'grid', gridTemplateColumns: '90px 90px 70px 1fr auto', gap: 8, alignItems: 'end' }}>
-            <div><SL>Başlangıç no</SL><input value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} style={inp} placeholder="101"/></div>
-            <div><SL>Bitiş no</SL><input value={bulkTo} onChange={e => setBulkTo(e.target.value)} style={inp} placeholder="120"/></div>
+            <div><SL>Başlangıç no</SL><input value={bulkFrom} onChange={e => { setBulkFrom(e.target.value); setBulkSkipped(0) }} style={inp} placeholder="101"/></div>
+            <div><SL>Bitiş no</SL><input value={bulkTo} onChange={e => { setBulkTo(e.target.value); setBulkSkipped(0) }} style={inp} placeholder="120"/></div>
             <div><SL>Kat</SL><input value={bulkFloor} onChange={e => setBulkFloor(e.target.value)} style={inp} type="number" placeholder="1"/></div>
             <div><SL>Oda tipi</SL><select value={bulkType} onChange={e => setBulkType(e.target.value)} style={inp} disabled={roomTypes.length === 0}><option value="">Seçin…</option>{roomTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}</select></div>
             <button onClick={bulkGenerate} disabled={!bulkFrom || !bulkTo || !bulkType} style={{ padding: '7px 14px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: (!bulkFrom || !bulkTo || !bulkType) ? 0.5 : 1 }}>Oluştur</button>
           </div>
+          {bulkSkipped > 0 && <div style={{ marginTop: 8, fontSize: 11, color: 'var(--warn)' }}>⚠ {bulkSkipped} oda numarası zaten mevcut olduğu için atlandı.</div>}
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, marginBottom: 12 }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12 }}>Tek oda ekle</div>
           <div style={{ display: 'grid', gridTemplateColumns: '100px 70px 1fr auto', gap: 8, alignItems: 'end' }}>
-            <div><SL>Oda no</SL><input value={singleNum} onChange={e => setSingleNum(e.target.value)} style={inp} placeholder="101A" onKeyDown={e => e.key === 'Enter' && addSingleRoom()}/></div>
+            <div>
+              <SL>Oda no</SL>
+              <input value={singleNum} onChange={e => setSingleNum(e.target.value)} style={{ ...inp, borderColor: (singleNum.trim() && rooms.find(r => r.number === singleNum.trim())) ? 'var(--warn)' : 'var(--border-c)' }} placeholder="101A" onKeyDown={e => e.key === 'Enter' && addSingleRoom()}/>
+              {singleNum.trim() && rooms.find(r => r.number === singleNum.trim()) && <div style={{ fontSize: 11, color: 'var(--warn)', marginTop: 3 }}>Bu numara zaten mevcut</div>}
+            </div>
             <div><SL>Kat</SL><input value={singleFloor} onChange={e => setSingleFloor(e.target.value)} style={inp} type="number" placeholder="1"/></div>
             <div><SL>Oda tipi</SL><select value={singleType} onChange={e => setSingleType(e.target.value)} style={inp} disabled={roomTypes.length === 0}><option value="">Seçin…</option>{roomTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}</select></div>
-            <button onClick={addSingleRoom} disabled={!singleNum.trim() || !singleType} style={{ padding: '7px 14px', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: (!singleNum.trim() || !singleType) ? 0.5 : 1 }}>Ekle</button>
+            <button onClick={addSingleRoom} disabled={!singleNum.trim() || !singleType || !!rooms.find(r => r.number === singleNum.trim())} style={{ padding: '7px 14px', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: (!singleNum.trim() || !singleType || rooms.find(r => r.number === singleNum.trim())) ? 0.5 : 1 }}>Ekle</button>
           </div>
         </div>
 

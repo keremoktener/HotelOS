@@ -35,6 +35,7 @@ export default async function GuestProfilePage({ params }: { params: { id: strin
     nationality: guest.nationality ?? 'TR',
     tcId: guest.tcId ? '•••••••' + guest.tcId.slice(-4) : null,
     passportNo: guest.passportNo ?? null,
+    dateOfBirth: guest.dateOfBirth ? guest.dateOfBirth.toISOString() : null,
     blacklisted: guest.blacklisted, blacklistReason: guest.blacklistReason ?? null,
     totalStays: guest.reservations.filter(r => r.status === 'CHECKEDOUT').length,
     totalRevenue,

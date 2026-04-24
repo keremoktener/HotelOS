@@ -55,7 +55,7 @@ export async function getReservationById(tenantId: string, id: string) {
 
 export async function createReservation(
   tenantId: string,
-  data: ReservationCreateInput & { totalPrice: number },
+  data: Omit<ReservationCreateInput, 'discountPct' | 'discountReason'> & { totalPrice: number },
 ) {
   return db.reservation.create({
     data: { ...data, tenantId, status: 'WAITING' },

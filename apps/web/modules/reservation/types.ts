@@ -13,6 +13,8 @@ export const reservationCreateSchema = z.object({
   children: z.number().int().min(0).max(10).default(0),
   notes: z.string().max(1000).optional(),
   specialRequests: z.string().max(1000).optional(),
+  discountPct: z.number().int().min(0).max(100).default(0),
+  discountReason: z.string().max(200).optional(),
 })
 
 export const reservationUpdateSchema = reservationCreateSchema.partial().omit({
@@ -34,6 +36,7 @@ export const pricePreviewSchema = z.object({
   guestCount: z.number().int().min(1).max(20),
   checkIn: z.date(),
   checkOut: z.date(),
+  roomId: z.string().uuid().optional(),
   agencyId: z.string().uuid().optional(),
 })
 

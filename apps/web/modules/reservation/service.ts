@@ -79,17 +79,28 @@ export async function createReservation(tenantId: string, input: ReservationCrea
   const room = await db.room.findFirst({ where: { id: input.roomId, tenantId } })
   if (!room) throw new TRPCError({ code: 'NOT_FOUND', message: 'Room not found' })
 
-  // Calculate price
+  // Calculate price — fall back to room type basePrice when no price calendar entry exists
   const persons = input.adults + input.children
-  const { totalPrice } = await calculatePrice(
-    tenantId,
-    persons,
-    input.checkIn,
-    input.checkOut,
-    input.agencyId,
-  )
+  let { totalPrice } = await calculatePrice(tenantId, persons, input.checkIn, input.checkOut, input.agencyId)
+  if (totalPrice === 0) {
+    const roomWithType = await db.room.findFirst({ where: { id: input.roomId, tenantId }, include: { roomType: true } })
+    const nights = Math.round((input.checkOut.getTime() - input.checkIn.getTime()) / 86400000)
+    totalPrice = (roomWithType?.roomType.basePrice ?? 0) * nights
+  }
 
-  return repo.createReservation(tenantId, { ...input, totalPrice })
+  // Apply manual discount
+  const discountPct = input.discountPct ?? 0
+  if (discountPct > 0) {
+    totalPrice = Math.round(totalPrice * (1 - discountPct / 100))
+  }
+
+  // Encode discount reason into specialRequests
+  const specialRequests = discountPct > 0 && input.discountReason
+    ? `[%${discountPct} indirim: ${input.discountReason}]${input.specialRequests ? '\n' + input.specialRequests : ''}`
+    : input.specialRequests
+
+  const { discountPct: _dp, discountReason: _dr, ...rest } = input
+  return repo.createReservation(tenantId, { ...rest, specialRequests, totalPrice })
 }
 
 export async function updateReservation(
@@ -132,7 +143,15 @@ export async function cancelReservation(tenantId: string, id: string, reason: st
 }
 
 export async function pricePreview(tenantId: string, input: PricePreviewInput) {
-  return calculatePrice(tenantId, input.guestCount, input.checkIn, input.checkOut, input.agencyId)
+  const result = await calculatePrice(tenantId, input.guestCount, input.checkIn, input.checkOut, input.agencyId)
+  if (result.totalPrice === 0 && input.roomId) {
+    const room = await db.room.findFirst({ where: { id: input.roomId, tenantId }, include: { roomType: true } })
+    if (room) {
+      const nights = Math.round((input.checkOut.getTime() - input.checkIn.getTime()) / 86400000)
+      return { ...result, totalPrice: room.roomType.basePrice * nights, pricePerNight: room.roomType.basePrice }
+    }
+  }
+  return result
 }
 
 export async function getDashboardData(tenantId: string) {

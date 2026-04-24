@@ -14,7 +14,7 @@ export default async function NewReservationPage({ searchParams }: { searchParam
   if (!tenantId) redirect('/onboarding')
 
   const rooms = await db.room.findMany({
-    where: { tenantId, status: 'CLEAN' },
+    where: { tenantId },
     include: { roomType: true },
     orderBy: [{ floor: 'asc' }, { number: 'asc' }],
   })
@@ -24,6 +24,7 @@ export default async function NewReservationPage({ searchParams }: { searchParam
     number: r.number,
     floor: r.floor,
     status: r.status,
+    roomTypeId: r.typeId,
     roomTypeName: r.roomType.name,
     capacity: r.roomType.capacity,
     basePrice: r.roomType.basePrice,
