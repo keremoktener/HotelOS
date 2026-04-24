@@ -140,7 +140,7 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
       <button
-        onClick={() => router.push('/guests')}
+        onClick={() => { router.refresh(); router.push('/guests') }}
         style={{ background: 'none', border: '1px solid var(--border-c)', borderRadius: 6, padding: '5px 10px', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', marginBottom: 16 }}
       >
         ← Misafirler
