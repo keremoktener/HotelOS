@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import * as repo from './repository'
+import { db } from '@/lib/db'
 import type { RoomCreateInput, RoomTypeCreateInput } from './types'
 import type { RoomStatus } from '@prisma/client'
 
@@ -15,6 +16,19 @@ export async function getRoom(tenantId: string, id: string) {
 
 export async function createRoom(tenantId: string, input: RoomCreateInput) {
   return repo.createRoom(tenantId, input)
+}
+
+export async function updateRoom(
+  tenantId: string,
+  id: string,
+  data: { number?: string; typeId?: string; floor?: number | null },
+) {
+  await getRoom(tenantId, id)
+  if (data.number) {
+    const conflict = await db.room.findFirst({ where: { tenantId, number: data.number, NOT: { id } } })
+    if (conflict) throw new TRPCError({ code: 'CONFLICT', message: `"${data.number}" oda numarası zaten mevcut` })
+  }
+  return repo.updateRoom(tenantId, id, data)
 }
 
 export async function updateRoomStatus(

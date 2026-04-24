@@ -18,6 +18,12 @@ export const roomCreateSchema = z.object({
   features: z.array(z.string()).default([]),
 })
 
+export const roomUpdateSchema = z.object({
+  number: z.string().min(1).max(20).optional(),
+  typeId: z.string().uuid().optional(),
+  floor: z.number().int().min(0).max(200).nullable().optional(),
+})
+
 export const roomUpdateStatusSchema = z.object({
   id: z.string().uuid(),
   status: roomStatusSchema,

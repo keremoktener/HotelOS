@@ -30,6 +30,18 @@ export async function createRoom(tenantId: string, data: {
   })
 }
 
+export async function updateRoom(
+  tenantId: string,
+  id: string,
+  data: { number?: string; typeId?: string; floor?: number | null },
+) {
+  return db.room.update({
+    where: { id, tenantId },
+    data,
+    include: { roomType: true },
+  })
+}
+
 export async function updateRoomStatus(
   tenantId: string,
   id: string,

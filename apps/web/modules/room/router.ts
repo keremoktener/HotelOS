@@ -4,6 +4,7 @@ import * as service from './service'
 import {
   roomCreateSchema,
   roomTypeCreateSchema,
+  roomUpdateSchema,
   roomUpdateStatusSchema,
   roomFiltersSchema,
 } from './types'
@@ -20,6 +21,10 @@ export const roomRouter = router({
   create: tenantProcedure
     .input(roomCreateSchema)
     .mutation(({ ctx, input }) => service.createRoom(ctx.tenantId, input)),
+
+  update: tenantProcedure
+    .input(z.object({ id: z.string().uuid(), data: roomUpdateSchema }))
+    .mutation(({ ctx, input }) => service.updateRoom(ctx.tenantId, input.id, input.data)),
 
   updateStatus: tenantProcedure
     .input(roomUpdateStatusSchema)

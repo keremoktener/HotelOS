@@ -12,7 +12,7 @@ export default async function RoomsPage() {
   const tenantId = await getTenantId(orgId)
   if (!tenantId) redirect('/onboarding')
 
-  const rooms = await db.room.findMany({
+  const [rooms, roomTypes] = await Promise.all([db.room.findMany({
     where: { tenantId },
     include: {
       roomType: true,
@@ -24,11 +24,13 @@ export default async function RoomsPage() {
       },
     },
     orderBy: [{ floor: 'asc' }, { number: 'asc' }],
-  })
+  }),
+  db.roomType.findMany({ where: { tenantId }, orderBy: { name: 'asc' } })])
 
   const plain = rooms.map(r => ({
     id: r.id, number: r.number, floor: r.floor, status: r.status,
     faultNote: r.faultDetail ?? null,
+    typeId: r.typeId,
     roomType: { name: r.roomType.name, capacity: r.roomType.capacity, basePrice: r.roomType.basePrice },
     currentGuest: r.reservations[0]
       ? { firstName: r.reservations[0].guest.firstName, lastName: r.reservations[0].guest.lastName, checkOut: r.reservations[0].checkOut.toISOString() }
@@ -43,7 +45,7 @@ export default async function RoomsPage() {
   return (
     <>
       <PageHeader title="Odalar" breadcrumb={`${rooms.length} oda · ${new Set(rooms.map(r => r.floor)).size} kat`}/>
-      <RoomsClient rooms={plain} countBy={countBy}/>
+      <RoomsClient rooms={plain} countBy={countBy} roomTypes={roomTypes.map(t => ({ id: t.id, name: t.name }))}/>
     </>
   )
 }
