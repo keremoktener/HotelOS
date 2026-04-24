@@ -1,26 +1,34 @@
 {
   "version": 1,
-  "updatedAt": 1776979272716,
-  "nodeCount": 2,
+  "updatedAt": 1776982787665,
+  "nodeCount": 3,
   "nodes": {
     "mem-MEMORY-memory-index": {
       "id": "mem-MEMORY-memory-index",
       "category": "core",
-      "confidence": 0.5,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "accessCount": 1,
       "createdAt": 1776979272715
     },
     "mem-project_hotelos----": {
       "id": "mem-project_hotelos----",
       "category": "project_hotelos",
+      "confidence": 0.55,
+      "accessCount": 1,
+      "createdAt": 1776979272715
+    },
+    "insight-1776982787664-k42w": {
+      "id": "insight-1776982787664-k42w",
+      "category": "insights",
       "confidence": 0.5,
       "accessCount": 0,
-      "createdAt": 1776979272715
+      "createdAt": 1776982787664
     }
   },
   "edges": [],
   "pageRanks": {
-    "mem-MEMORY-memory-index": 0.5,
-    "mem-project_hotelos----": 0.5
+    "mem-MEMORY-memory-index": 0.3333333333333333,
+    "mem-project_hotelos----": 0.3333333333333333,
+    "insight-1776982787664-k42w": 0.3333333333333333
   }
 }

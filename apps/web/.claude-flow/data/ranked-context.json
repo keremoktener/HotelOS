@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "computedAt": 1776979272716,
+  "computedAt": 1776982787665,
   "entries": [
     {
       "id": "mem-MEMORY-memory-index",
       "content": "- [HotelOS Project Overview](project_hotelos.md) — Full stack, architecture, 10 modules, 6 phases, conventions, and non-negotiable rules for the HotelOS SaaS platform",
       "summary": "Memory Index",
       "category": "core",
-      "confidence": 0.5,
-      "pageRank": 0.5,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "pageRank": 0.3333333333333333,
+      "accessCount": 1,
       "words": [
         "hotelos",
         "project",
@@ -36,9 +36,9 @@
       "content": "name: HotelOS Project Overview\ndescription: Full context for the HotelOS hotel management SaaS platform — stack, architecture, modules, phases, and conventions\ntype: project\noriginSessionId: d8a2873d-e0ca-4cca-8759-c5af57241c6a\n---\nHotelOS is a multi-tenant SaaS hotel management platform. Turkish UI, English codebase. KVKK-compliant (deploy on Azure Turkey or AWS Frankfurt).\n\n**Stack:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui, tRPC, Prisma 5+, PostgreSQL 16+, Clerk (auth), B",
       "summary": "---",
       "category": "project_hotelos",
-      "confidence": 0.5,
-      "pageRank": 0.5,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "pageRank": 0.3333333333333333,
+      "accessCount": 1,
       "words": [
         "name",
         "hotelos",
@@ -91,6 +91,31 @@
         "clerk",
         "auth",
         "---"
+      ]
+    },
+    {
+      "id": "insight-1776982787664-k42w",
+      "content": "File unknown was edited 25 times this session — likely a hot path worth monitoring.",
+      "summary": "Frequently edited: unknown (25x)",
+      "category": "insights",
+      "confidence": 0.5,
+      "pageRank": 0.3333333333333333,
+      "accessCount": 0,
+      "words": [
+        "file",
+        "unknown",
+        "edited",
+        "times",
+        "session",
+        "likely",
+        "hot",
+        "path",
+        "worth",
+        "monitoring",
+        "frequently",
+        "edited",
+        "unknown",
+        "25x"
       ]
     }
   ]
