@@ -46,16 +46,15 @@ function trDate(iso: string) {
 
 function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
 
-function StatusStat({ icon, label, count, color, bg }: { icon: React.ReactNode; label: string; count: number; color: string; bg: string }) {
-  return (
-    <div style={{ flex: 1, padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-      <div>
-        <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.03em', fontWeight: 500 }}>{label.toUpperCase()}</div>
-        <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{count}</div>
-      </div>
-    </div>
-  )
+const STAT_ICONS: Record<string, React.ReactNode> = {
+  CLEAN: <CheckCircle size={16}/>, DIRTY: <Bed size={16}/>,
+  FAULTY: <AlertTriangle size={16}/>, DND: <Moon size={16}/>,
+}
+const STAT_COLORS: Record<string, { color: string; bg: string }> = {
+  CLEAN:  { color: 'var(--good)', bg: 'var(--good-bg)' },
+  DIRTY:  { color: 'var(--warn)', bg: 'var(--warn-bg)' },
+  FAULTY: { color: 'var(--bad)',  bg: 'var(--bad-bg)'  },
+  DND:    { color: 'var(--info)', bg: 'var(--info-bg)' },
 }
 
 function RoomCard({ r, onChanged }: { r: Room; onChanged: () => void }) {
@@ -75,43 +74,25 @@ function RoomCard({ r, onChanged }: { r: Room; onChanged: () => void }) {
           <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{r.number}</div>
           <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{r.roomType.name}</div>
         </div>
-        <button
-          onClick={() => setOpen(v => !v)}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          title="Durum değiştir"
-        >
+        <button onClick={() => setOpen(v => !v)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} title="Durum değiştir">
           <Chip tone={meta.tone} dot>{meta.label}</Chip>
         </button>
       </div>
-
-      {/* Status picker dropdown */}
       {open && (
         <div style={{ marginBottom: 10, background: 'var(--surface-2)', borderRadius: 6, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {STATUS_OPTIONS.filter(s => s !== r.status).map(s => (
-            <button
-              key={s}
-              onClick={() => {
-                if (s === 'FAULTY' && !faultDetail.trim()) return
-                updateStatus.mutate({ id: r.id, status: s, faultDetail: s === 'FAULTY' ? faultDetail : undefined })
-              }}
+            <button key={s}
+              onClick={() => { if (s === 'FAULTY' && !faultDetail.trim()) return; updateStatus.mutate({ id: r.id, status: s, faultDetail: s === 'FAULTY' ? faultDetail : undefined }) }}
               disabled={updateStatus.isPending || (s === 'FAULTY' && !faultDetail.trim())}
               style={{ padding: '5px 8px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 4, fontSize: 11, fontWeight: 500, cursor: 'pointer', textAlign: 'left', color: STATUS_META[s].accent, opacity: (s === 'FAULTY' && !faultDetail.trim()) ? 0.4 : 1 }}
-            >
-              → {STATUS_META[s].label}
-            </button>
+            >→ {STATUS_META[s].label}</button>
           ))}
-          {(r.status !== 'FAULTY' || open) && (
-            <input
-              value={faultDetail}
-              onChange={e => setFaultDetail(e.target.value)}
-              placeholder="Arıza notu (FAULTY için)"
-              style={{ marginTop: 4, padding: '5px 8px', border: '1px solid var(--border-c)', borderRadius: 4, fontSize: 11, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
-            />
-          )}
+          <input value={faultDetail} onChange={e => setFaultDetail(e.target.value)}
+            placeholder="Arıza notu (FAULTY için)"
+            style={{ marginTop: 4, padding: '5px 8px', border: '1px solid var(--border-c)', borderRadius: 4, fontSize: 11, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}/>
           <button onClick={() => setOpen(false)} style={{ padding: '4px', fontSize: 10, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>Kapat</button>
         </div>
       )}
-
       <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--text-2)', marginBottom: 8 }}>
         <span>{r.roomType.capacity} kişi</span>
         <span>{formatCurrency(r.roomType.basePrice)}</span>
@@ -134,9 +115,41 @@ function RoomCard({ r, onChanged }: { r: Room; onChanged: () => void }) {
 export function RoomsClient({ rooms, countBy }: Props) {
   const router = useRouter()
   const [view, setView] = useState<'grid' | 'list'>('grid')
-  const floors = Array.from(new Set(rooms.map(r => r.floor))).sort((a, b) => (b ?? 0) - (a ?? 0))
 
-  const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
+  // Filters
+  const [filterFloor, setFilterFloor] = useState<number | null | 'ALL'>('ALL')
+  const [filterType, setFilterType] = useState<string>('ALL')
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set())
+
+  function toggleStatus(s: string) {
+    setFilterStatuses(prev => {
+      const next = new Set(prev)
+      next.has(s) ? next.delete(s) : next.add(s)
+      return next
+    })
+  }
+
+  const hasFilters = filterFloor !== 'ALL' || filterType !== 'ALL' || filterStatuses.size > 0
+
+  function clearFilters() {
+    setFilterFloor('ALL'); setFilterType('ALL'); setFilterStatuses(new Set())
+  }
+
+  // Derive filter options from full room list
+  const allFloors = Array.from(new Set(rooms.map(r => r.floor))).sort((a, b) => (a ?? 0) - (b ?? 0))
+  const allTypes  = Array.from(new Set(rooms.map(r => r.roomType.name))).sort((a, b) => a.localeCompare(b, 'tr'))
+
+  // Apply filters
+  const filtered = rooms.filter(r => {
+    if (filterFloor !== 'ALL' && r.floor !== filterFloor) return false
+    if (filterType  !== 'ALL' && r.roomType.name !== filterType) return false
+    if (filterStatuses.size > 0 && !filterStatuses.has(r.status)) return false
+    return true
+  })
+
+  const visibleFloors = Array.from(new Set(filtered.map(r => r.floor))).sort((a, b) => (a ?? 0) - (b ?? 0))
+
+  const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)', whiteSpace: 'nowrap' }
   const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
 
   const viewBtn = (v: 'grid' | 'list') => ({
@@ -145,34 +158,95 @@ export function RoomsClient({ rooms, countBy }: Props) {
     fontSize: 12, fontWeight: view === v ? 600 : 450, cursor: 'pointer' as const,
   })
 
+  const pillActive: React.CSSProperties  = { padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid var(--accent-c)', background: 'var(--accent-c)', color: 'var(--accent-fg)' }
+  const pillInactive: React.CSSProperties = { padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 450, cursor: 'pointer', border: '1px solid var(--border-c)', background: 'transparent', color: 'var(--text-2)' }
+
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
-      {/* Stats */}
+      {/* Stats — clickable status filter */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <StatusStat icon={<CheckCircle size={16}/>} label="Temiz"   count={countBy.CLEAN  ?? 0} color="var(--good)" bg="var(--good-bg)"/>
-        <StatusStat icon={<Bed size={16}/>}         label="Kirli"   count={countBy.DIRTY  ?? 0} color="var(--warn)" bg="var(--warn-bg)"/>
-        <StatusStat icon={<AlertTriangle size={16}/>}label="Arızalı"count={countBy.FAULTY ?? 0} color="var(--bad)"  bg="var(--bad-bg)"/>
-        <StatusStat icon={<Moon size={16}/>}         label="DND"     count={countBy.DND    ?? 0} color="var(--info)" bg="var(--info-bg)"/>
+        {STATUS_OPTIONS.map(s => {
+          const { color, bg } = STAT_COLORS[s]
+          const active = filterStatuses.has(s)
+          const dimmed = filterStatuses.size > 0 && !active
+          return (
+            <button key={s} onClick={() => toggleStatus(s)} style={{ flex: 1, padding: '14px 16px', background: 'var(--surface)', border: `1px solid ${active ? color : 'var(--border-c)'}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', opacity: dimmed ? 0.45 : 1, transition: 'opacity 0.15s, border-color 0.15s', textAlign: 'left' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{STAT_ICONS[s]}</div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.03em', fontWeight: 500 }}>{STATUS_META[s].label.toUpperCase()}</div>
+                <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{countBy[s] ?? 0}</div>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        {/* View toggle */}
         <div style={{ display: 'flex', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 6, padding: 2 }}>
           <button onClick={() => setView('grid')} style={viewBtn('grid')}>Izgara</button>
           <button onClick={() => setView('list')} style={viewBtn('list')}>Liste</button>
         </div>
+
+        <div style={{ width: 1, height: 20, background: 'var(--border-c)' }}/>
+
+        {/* Floor pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500, marginRight: 2 }}>KAT</span>
+          <button onClick={() => setFilterFloor('ALL')} style={filterFloor === 'ALL' ? pillActive : pillInactive}>Tümü</button>
+          {allFloors.map(f => (
+            <button key={String(f)} onClick={() => setFilterFloor(f)} style={filterFloor === f ? pillActive : pillInactive}>
+              {f != null ? `Kat ${f}` : '—'}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ width: 1, height: 20, background: 'var(--border-c)' }}/>
+
+        {/* Type select */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>TİP</span>
+          <select
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
+            style={{ padding: '4px 8px', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, background: filterType !== 'ALL' ? 'var(--accent-c)' : 'var(--surface)', color: filterType !== 'ALL' ? 'var(--accent-fg)' : 'var(--text-2)', cursor: 'pointer', outline: 'none' }}
+          >
+            <option value="ALL">Tümü</option>
+            {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+
+        {hasFilters && (
+          <>
+            <div style={{ flex: 1 }}/>
+            <button onClick={clearFilters} style={{ padding: '4px 12px', borderRadius: 999, fontSize: 12, border: '1px solid var(--border-c)', background: 'var(--surface-2)', color: 'var(--text-3)', cursor: 'pointer' }}>
+              ✕ Filtreyi temizle
+            </button>
+          </>
+        )}
+
+        <div style={{ marginLeft: hasFilters ? 0 : 'auto', fontSize: 12, color: 'var(--text-3)' }}>
+          {filtered.length} / {rooms.length} oda
+        </div>
       </div>
+
+      {filtered.length === 0 && (
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-3)', fontSize: 13, background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10 }}>
+          Seçili filtrelere uyan oda bulunamadı.
+        </div>
+      )}
 
       {view === 'grid' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {floors.map(f => (
+          {visibleFloors.map(f => (
             <div key={String(f)} style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border-c)' }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{f != null ? `Kat ${f}` : 'Katsız'}</div>
-                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{rooms.filter(r => r.floor === f).length} oda</span>
+                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{filtered.filter(r => r.floor === f).length} oda</span>
               </div>
               <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-                {rooms.filter(r => r.floor === f).map(r => <RoomCard key={r.id} r={r} onChanged={() => router.refresh()}/>)}
+                {filtered.filter(r => r.floor === f).map(r => <RoomCard key={r.id} r={r} onChanged={() => router.refresh()}/>)}
               </div>
             </div>
           ))}
@@ -185,19 +259,22 @@ export function RoomsClient({ rooms, countBy }: Props) {
               <th style={th}>Durum</th><th style={th}>Misafir</th><th style={{ ...th, textAlign: 'right' }}>Gecelik</th>
             </tr></thead>
             <tbody>
-              {rooms.map(r => {
-                const meta = STATUS_META[r.status] ?? { label: r.status, tone: 'neutral', accent: 'var(--text-3)' }
-                return (
-                  <tr key={r.id} style={{ borderTop: '1px solid var(--border-c)' }}>
-                    <td style={{ ...td, fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{r.number}</td>
-                    <td style={td}>{r.roomType.name}</td>
-                    <td style={td}>{r.floor ?? '—'}</td>
-                    <td style={td}><Chip tone={meta.tone} dot>{meta.label}</Chip></td>
-                    <td style={td}>{r.currentGuest ? `${r.currentGuest.firstName} ${r.currentGuest.lastName}` : <span style={{ color: 'var(--text-3)' }}>—</span>}</td>
-                    <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(r.roomType.basePrice)}</td>
-                  </tr>
-                )
-              })}
+              {filtered.length === 0
+                ? <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text-3)' }}>Seçili filtrelere uyan oda bulunamadı.</td></tr>
+                : filtered.map(r => {
+                    const meta = STATUS_META[r.status] ?? { label: r.status, tone: 'neutral', accent: 'var(--text-3)' }
+                    return (
+                      <tr key={r.id} style={{ borderTop: '1px solid var(--border-c)' }}>
+                        <td style={{ ...td, fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{r.number}</td>
+                        <td style={td}>{r.roomType.name}</td>
+                        <td style={td}>{r.floor ?? '—'}</td>
+                        <td style={td}><Chip tone={meta.tone} dot>{meta.label}</Chip></td>
+                        <td style={td}>{r.currentGuest ? `${r.currentGuest.firstName} ${r.currentGuest.lastName}` : <span style={{ color: 'var(--text-3)' }}>—</span>}</td>
+                        <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(r.roomType.basePrice)}</td>
+                      </tr>
+                    )
+                  })
+              }
             </tbody>
           </table>
         </div>
