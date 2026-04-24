@@ -78,6 +78,10 @@ export default function GuestNewPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (tcId.trim() && tcId.trim().length !== 11) {
+      setError('Kimlik numarası eksik veya hatalı')
+      return
+    }
     const phone = phoneNumber.trim() ? `${dialCode}${phoneNumber.trim()}` : undefined
     createGuest.mutate({
       firstName: firstName.trim(),

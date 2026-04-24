@@ -16,6 +16,10 @@ const STATUS_TONE: Record<string, string> = {
 const FILTERS = ['ALL', 'WAITING', 'CONFIRMED', 'CHECKEDIN', 'CHECKEDOUT', 'CANCELLED']
 const FILTER_LABEL: Record<string, string> = { ALL: 'Tümü', WAITING: 'Beklemede', CONFIRMED: 'Onaylandı', CHECKEDIN: 'Girişte', CHECKEDOUT: 'Çıkış', CANCELLED: 'İptal' }
 
+type SortKey = 'guest' | 'room' | 'date' | 'price'
+type SortDir = 'asc' | 'desc'
+const DEFAULT_DIR: Record<SortKey, SortDir> = { guest: 'asc', room: 'asc', date: 'asc', price: 'desc' }
+
 const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)', whiteSpace: 'nowrap' }
 const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
 
@@ -47,6 +51,11 @@ function formatCurrency(kurus: number) {
   return (kurus / 100).toLocaleString('tr-TR') + ' ₺'
 }
 
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <span style={{ opacity: 0.3, marginLeft: 4, fontSize: 10 }}>⇅</span>
+  return <span style={{ marginLeft: 4, fontSize: 10 }}>{dir === 'asc' ? '↑' : '↓'}</span>
+}
+
 interface Reservation {
   id: string; status: string; totalPrice: number; checkIn: string; checkOut: string
   adults: number; children: number
@@ -61,10 +70,41 @@ interface Props {
 export function ReservationListClient({ reservations, total, page, totalPages, activeStatus }: Props) {
   const router = useRouter()
   const [q, setQ] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir(DEFAULT_DIR[key])
+    }
+  }
 
   const filtered = q
     ? reservations.filter(r => `${r.guest.firstName} ${r.guest.lastName} ${r.id} ${r.room?.number ?? ''}`.toLowerCase().includes(q.toLowerCase()))
     : reservations
+
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        let cmp = 0
+        if (sortKey === 'guest') {
+          const na = `${a.guest.firstName} ${a.guest.lastName}`.toLowerCase()
+          const nb = `${b.guest.firstName} ${b.guest.lastName}`.toLowerCase()
+          cmp = na.localeCompare(nb, 'tr')
+        } else if (sortKey === 'room') {
+          const na = parseInt(a.room?.number ?? '0', 10) || 0
+          const nb = parseInt(b.room?.number ?? '0', 10) || 0
+          cmp = na - nb
+        } else if (sortKey === 'date') {
+          cmp = new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
+        } else if (sortKey === 'price') {
+          cmp = a.totalPrice - b.totalPrice
+        }
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    : filtered
 
   function navStatus(s: string) {
     const url = s === 'ALL' ? '/reservation' : `/reservation?status=${s}`
@@ -72,6 +112,15 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
   }
 
   const active = activeStatus ?? 'ALL'
+
+  const sortableTh = (key: SortKey, label: string, align?: 'right') => (
+    <th
+      style={{ ...th, cursor: 'pointer', userSelect: 'none', textAlign: align ?? 'left' }}
+      onClick={() => handleSort(key)}
+    >
+      {label}<SortIcon active={sortKey === key} dir={sortDir}/>
+    </th>
+  )
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
@@ -96,16 +145,16 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
               <th style={th}>ID</th>
-              <th style={th}>Misafir</th>
-              <th style={th}>Oda</th>
-              <th style={th}>Giriş → Çıkış</th>
+              {sortableTh('guest', 'Misafir')}
+              {sortableTh('room', 'Oda')}
+              {sortableTh('date', 'Giriş → Çıkış')}
               <th style={th}>Kişi</th>
               <th style={th}>Durum</th>
-              <th style={{ ...th, textAlign: 'right' }}>Toplam</th>
+              {sortableTh('price', 'Toplam', 'right')}
               <th style={{ ...th, width: 40 }}></th>
             </tr></thead>
             <tbody>
-              {filtered.map(r => (
+              {sorted.map(r => (
                 <tr key={r.id}
                   onClick={() => router.push(`/reservation/${r.id}`)}
                   style={{ borderTop: '1px solid var(--border-c)', cursor: 'pointer' }}
@@ -137,7 +186,7 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
           </table>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border-c)' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{filtered.length} kayıt gösteriliyor · {total} toplam</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{sorted.length} kayıt gösteriliyor · {total} toplam</div>
           {totalPages > 1 && (
             <div style={{ display: 'flex', gap: 4 }}>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (

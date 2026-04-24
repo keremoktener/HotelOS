@@ -108,8 +108,29 @@ export async function updateReservation(
   id: string,
   input: ReservationUpdateInput,
 ) {
-  await getReservation(tenantId, id)
-  return repo.updateReservation(tenantId, id, input)
+  const existing = await getReservation(tenantId, id)
+
+  if (input.roomId) {
+    const room = await db.room.findFirst({ where: { id: input.roomId, tenantId } })
+    if (!room) throw new TRPCError({ code: 'NOT_FOUND', message: 'Room not found' })
+  }
+
+  const { discountPct, discountReason, ...rest } = input
+
+  let totalPrice: number | undefined
+  if (discountPct && discountPct > 0) {
+    totalPrice = Math.round(existing.totalPrice * (1 - discountPct / 100))
+  }
+
+  const specialRequests = discountPct && discountPct > 0 && discountReason
+    ? `[%${discountPct} indirim: ${discountReason}]${rest.specialRequests ? '\n' + rest.specialRequests : ''}`
+    : rest.specialRequests
+
+  return repo.updateReservation(tenantId, id, {
+    ...rest,
+    ...(specialRequests !== undefined && { specialRequests }),
+    ...(totalPrice !== undefined && { totalPrice }),
+  })
 }
 
 export async function checkInReservation(tenantId: string, id: string) {

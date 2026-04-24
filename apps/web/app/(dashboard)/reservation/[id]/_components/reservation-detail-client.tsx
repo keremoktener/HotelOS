@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
@@ -47,10 +47,21 @@ function trDate(iso: string) {
   const M = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
   return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`
 }
+function toInputDate(iso: string) { return iso.slice(0, 10) }
 function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
 
 const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
 const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
+const inputStyle: React.CSSProperties = { padding: '7px 10px', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)' }}>{label}</label>
+      {children}
+    </div>
+  )
+}
 
 interface Payment { id: string; amount: number; method: string; reference: string; createdAt: string }
 interface Reservation {
@@ -60,8 +71,9 @@ interface Reservation {
   room: { id: string; number: string; floor: number | null; status: string; faultNote: string | null; roomType: { name: string; capacity: number } } | null
   payments: Payment[]
 }
+interface AvailableRoom { id: string; number: string; floor: number | null; status: string; roomTypeName: string }
 
-export function ReservationDetailClient({ reservation: r }: { reservation: Reservation }) {
+export function ReservationDetailClient({ reservation: r, availableRooms }: { reservation: Reservation; availableRooms: AvailableRoom[] }) {
   const router = useRouter()
   const nights = Math.round((new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime()) / (1000 * 60 * 60 * 24))
   const balance = r.totalPrice - r.paidAmount
@@ -70,6 +82,21 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
   const [cancelReason, setCancelReason] = useState('')
   const [showCancelInput, setShowCancelInput] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  // Edit state
+  const [editing, setEditing] = useState(false)
+  const [editCheckIn, setEditCheckIn] = useState(toInputDate(r.checkIn))
+  const [editCheckOut, setEditCheckOut] = useState(toInputDate(r.checkOut))
+  const [editAdults, setEditAdults] = useState(String(r.adults))
+  const [editChildren, setEditChildren] = useState(String(r.children))
+  const [editNotes, setEditNotes] = useState(r.notes)
+  const [editRoomId, setEditRoomId] = useState(r.room?.id ?? '')
+  const [editDiscountPct, setEditDiscountPct] = useState('')
+  const [editDiscountReason, setEditDiscountReason] = useState('')
+  const [editError, setEditError] = useState('')
+
+  const discountPctNum = Number(editDiscountPct) || 0
+  const discountedTotal = discountPctNum > 0 ? Math.round(r.totalPrice * (1 - discountPctNum / 100)) : r.totalPrice
 
   function onSuccess() { router.refresh() }
   function onError(err: { message: string }) { setActionError(err.message) }
@@ -80,11 +107,45 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
     onSuccess: () => { setShowCancelInput(false); setCancelReason(''); onSuccess() },
     onError,
   })
+  const updateMut = trpc.reservation.update.useMutation({
+    onSuccess: () => { router.refresh(); setEditing(false); setEditError('') },
+    onError: (err) => setEditError(err.message),
+  })
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setEditError('')
+    const cin = new Date(editCheckIn)
+    const cout = new Date(editCheckOut)
+    if (cout <= cin) { setEditError('Çıkış tarihi girişten sonra olmalıdır.'); return }
+    if (discountPctNum > 0 && !editDiscountReason.trim()) { setEditError('İndirim nedeni zorunludur.'); return }
+    updateMut.mutate({
+      id: r.id,
+      data: {
+        checkIn: cin,
+        checkOut: cout,
+        adults: Number(editAdults),
+        children: Number(editChildren),
+        notes: editNotes.trim() || undefined,
+        roomId: editRoomId || undefined,
+        discountPct: discountPctNum > 0 ? discountPctNum : undefined,
+        discountReason: discountPctNum > 0 ? editDiscountReason.trim() : undefined,
+      },
+    })
+  }
+
+  function cancelEdit() {
+    setEditCheckIn(toInputDate(r.checkIn)); setEditCheckOut(toInputDate(r.checkOut))
+    setEditAdults(String(r.adults)); setEditChildren(String(r.children))
+    setEditNotes(r.notes); setEditRoomId(r.room?.id ?? '')
+    setEditDiscountPct(''); setEditDiscountReason(''); setEditError(''); setEditing(false)
+  }
 
   const busy = checkInMut.isPending || checkOutMut.isPending || cancelMut.isPending
   const canCheckIn = r.status === 'WAITING' || r.status === 'CONFIRMED'
   const canCheckOut = r.status === 'CHECKEDIN'
   const canCancel = r.status === 'WAITING' || r.status === 'CONFIRMED'
+  const canEdit = r.status === 'WAITING' || r.status === 'CONFIRMED'
 
   const btnBase: React.CSSProperties = {
     width: '100%', padding: '9px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600,
@@ -93,6 +154,13 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
 
   return (
     <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24 }}>
+      <button
+        onClick={() => { router.refresh(); router.push('/reservation') }}
+        style={{ background: 'none', border: '1px solid var(--border-c)', borderRadius: 6, padding: '5px 10px', fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', marginBottom: 16 }}
+      >
+        ← Rezervasyonlar
+      </button>
+
       {/* Guest header */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, display: 'flex', gap: 16, boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 600, flexShrink: 0 }}>
@@ -122,6 +190,77 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
           ))}
         </div>
       </div>
+
+      {/* Edit form */}
+      {editing && (
+        <form onSubmit={handleSave} style={{ background: 'var(--surface)', border: '1px solid var(--accent-c)', borderRadius: 10, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}>Rezervasyon düzenle</div>
+          <div style={{ marginBottom: 12 }}>
+            <Field label="Oda">
+              <select style={inputStyle} value={editRoomId} onChange={e => setEditRoomId(e.target.value)}>
+                <option value="">— Oda seçin —</option>
+                {availableRooms.map(room => {
+                  const isCurrent = room.id === r.room?.id
+                  const selectable = room.status === 'CLEAN' || isCurrent
+                  return (
+                    <option key={room.id} value={room.id} disabled={!selectable}>
+                      {room.number} · {room.roomTypeName}{room.floor != null ? ` (Kat ${room.floor})` : ''}{isCurrent ? ' — Mevcut' : !selectable ? ` — ${room.status === 'DIRTY' ? 'Kirli' : room.status === 'FAULTY' ? 'Arızalı' : 'DND'}` : ''}
+                    </option>
+                  )
+                })}
+              </select>
+            </Field>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <Field label="Giriş tarihi">
+              <input type="date" style={inputStyle} value={editCheckIn} onChange={e => setEditCheckIn(e.target.value)} required/>
+            </Field>
+            <Field label="Çıkış tarihi">
+              <input type="date" style={inputStyle} value={editCheckOut} onChange={e => setEditCheckOut(e.target.value)} required/>
+            </Field>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <Field label="Yetişkin">
+              <input type="number" min={1} max={20} style={inputStyle} value={editAdults} onChange={e => setEditAdults(e.target.value)}/>
+            </Field>
+            <Field label="Çocuk">
+              <input type="number" min={0} max={10} style={inputStyle} value={editChildren} onChange={e => setEditChildren(e.target.value)}/>
+            </Field>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, marginBottom: discountPctNum > 0 ? 12 : 0 }}>
+            <Field label="İndirim (%)">
+              <input type="number" min={0} max={100} style={inputStyle} value={editDiscountPct} onChange={e => setEditDiscountPct(e.target.value)} placeholder="0"/>
+            </Field>
+            {discountPctNum > 0 && (
+              <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 1 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                  {formatCurrency(r.totalPrice)} → <b style={{ color: 'var(--good)' }}>{formatCurrency(discountedTotal)}</b>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 6 }}>({formatCurrency(r.totalPrice - discountedTotal)} indirim)</span>
+                </div>
+              </div>
+            )}
+          </div>
+          {discountPctNum > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <Field label="İndirim nedeni *">
+                <input style={inputStyle} value={editDiscountReason} onChange={e => setEditDiscountReason(e.target.value)} placeholder="Nedeni girin"/>
+              </Field>
+            </div>
+          )}
+          <Field label="Dahili notlar">
+            <textarea style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} value={editNotes} onChange={e => setEditNotes(e.target.value)}/>
+          </Field>
+          {editError && <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--bad-bg)', borderRadius: 6, color: 'var(--bad)', fontSize: 12 }}>{editError}</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button type="submit" disabled={updateMut.isPending} style={{ padding: '8px 20px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: updateMut.isPending ? 'not-allowed' : 'pointer', opacity: updateMut.isPending ? 0.7 : 1 }}>
+              {updateMut.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
+            <button type="button" onClick={cancelEdit} style={{ padding: '8px 16px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
+              İptal
+            </button>
+          </div>
+        </form>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -182,57 +321,47 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
         {/* Right rail */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Actions */}
-          {(canCheckIn || canCheckOut || canCancel) && (
+          {(canCheckIn || canCheckOut || canCancel || canEdit) && (
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>İşlemler</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {canCheckIn && (
+                {canEdit && (
                   <button
-                    onClick={() => checkInMut.mutate({ id: r.id })}
-                    disabled={busy}
-                    style={{ ...btnBase, background: 'var(--good)', color: '#fff' }}
+                    onClick={() => editing ? cancelEdit() : setEditing(true)}
+                    style={{ ...btnBase, background: editing ? 'var(--surface-2)' : 'var(--info-bg)', color: editing ? 'var(--text-2)' : 'var(--info)', border: `1px solid ${editing ? 'var(--border-c)' : 'var(--info)'}` }}
                   >
+                    {editing ? '✕ Düzenlemeyi iptal et' : '✎ Düzenle'}
+                  </button>
+                )}
+                {canCheckIn && (
+                  <button onClick={() => checkInMut.mutate({ id: r.id })} disabled={busy} style={{ ...btnBase, background: 'var(--good)', color: '#fff' }}>
                     {checkInMut.isPending ? 'İşleniyor…' : '✓ Giriş yap'}
                   </button>
                 )}
                 {canCheckOut && (
-                  <button
-                    onClick={() => checkOutMut.mutate({ id: r.id })}
-                    disabled={busy}
-                    style={{ ...btnBase, background: 'var(--accent-c)', color: 'var(--accent-fg)' }}
-                  >
+                  <button onClick={() => checkOutMut.mutate({ id: r.id })} disabled={busy} style={{ ...btnBase, background: 'var(--accent-c)', color: 'var(--accent-fg)' }}>
                     {checkOutMut.isPending ? 'İşleniyor…' : '→ Çıkış yap'}
                   </button>
                 )}
                 {canCancel && !showCancelInput && (
-                  <button
-                    onClick={() => setShowCancelInput(true)}
-                    disabled={busy}
-                    style={{ ...btnBase, background: 'var(--surface-2)', color: 'var(--bad)', border: '1px solid var(--border-c)' }}
-                  >
+                  <button onClick={() => setShowCancelInput(true)} disabled={busy} style={{ ...btnBase, background: 'var(--surface-2)', color: 'var(--bad)', border: '1px solid var(--border-c)' }}>
                     İptal et
                   </button>
                 )}
                 {showCancelInput && (
                   <div>
                     <input
-                      value={cancelReason}
-                      onChange={e => setCancelReason(e.target.value)}
+                      value={cancelReason} onChange={e => setCancelReason(e.target.value)}
                       placeholder="İptal nedeni (zorunlu)"
                       style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--bg)', fontSize: 12, color: 'var(--text)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
                     />
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        onClick={() => cancelMut.mutate({ id: r.id, reason: cancelReason })}
-                        disabled={busy || cancelReason.trim().length === 0}
-                        style={{ flex: 1, padding: '7px', background: 'var(--bad)', color: '#fff', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: cancelReason.trim() ? 'pointer' : 'not-allowed', opacity: cancelReason.trim() ? 1 : 0.5 }}
-                      >
+                      <button onClick={() => cancelMut.mutate({ id: r.id, reason: cancelReason })} disabled={busy || !cancelReason.trim()}
+                        style={{ flex: 1, padding: '7px', background: 'var(--bad)', color: '#fff', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: cancelReason.trim() ? 'pointer' : 'not-allowed', opacity: cancelReason.trim() ? 1 : 0.5 }}>
                         Onayla
                       </button>
-                      <button
-                        onClick={() => { setShowCancelInput(false); setCancelReason('') }}
-                        style={{ padding: '7px 12px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
-                      >
+                      <button onClick={() => { setShowCancelInput(false); setCancelReason('') }}
+                        style={{ padding: '7px 12px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
                         Vazgeç
                       </button>
                     </div>
@@ -264,15 +393,8 @@ export function ReservationDetailClient({ reservation: r }: { reservation: Reser
             <Link href={`/guests/${r.guest.id}`} style={{ fontSize: 13, color: 'var(--accent-c)', textDecoration: 'none', fontWeight: 500 }}>{r.guest.firstName} {r.guest.lastName}</Link>
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>{r.guest.phone}</div>
           </div>
-
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Dahili notlar</div>
-            <textarea defaultValue={r.notes} style={{ width: '100%', minHeight: 60, resize: 'vertical', padding: 10, border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--bg)', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }}/>
-          </div>
         </div>
       </div>
     </div>
   )
 }
-
-import React from 'react'

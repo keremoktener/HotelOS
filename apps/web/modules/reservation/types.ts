@@ -19,7 +19,6 @@ export const reservationCreateSchema = z.object({
 
 export const reservationUpdateSchema = reservationCreateSchema.partial().omit({
   guestId: true,
-  roomId: true,
 })
 
 export const reservationFiltersSchema = z.object({

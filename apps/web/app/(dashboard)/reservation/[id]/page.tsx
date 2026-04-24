@@ -13,16 +13,28 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
   const tenantId = await getTenantId(orgId)
   if (!tenantId) redirect('/onboarding')
 
-  const reservation = await db.reservation.findFirst({
-    where: { id: params.id, tenantId },
-    include: {
-      guest: true,
-      room: { include: { roomType: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
-    },
-  })
+  const [reservation, allRooms] = await Promise.all([
+    db.reservation.findFirst({
+      where: { id: params.id, tenantId },
+      include: {
+        guest: true,
+        room: { include: { roomType: true } },
+        payments: { orderBy: { createdAt: 'desc' } },
+      },
+    }),
+    db.room.findMany({
+      where: { tenantId },
+      include: { roomType: true },
+      orderBy: [{ floor: 'asc' }, { number: 'asc' }],
+    }),
+  ])
 
   if (!reservation) notFound()
+
+  const rooms = allRooms.map(r => ({
+    id: r.id, number: r.number, floor: r.floor, status: r.status,
+    roomTypeName: r.roomType.name,
+  }))
 
   const plain = {
     id: reservation.id, status: reservation.status,
@@ -56,7 +68,7 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
   return (
     <>
       <PageHeader title={`${reservation.guest.firstName} ${reservation.guest.lastName}`} breadcrumb={breadcrumb}/>
-      <ReservationDetailClient reservation={plain}/>
+      <ReservationDetailClient reservation={plain} availableRooms={rooms}/>
     </>
   )
 }

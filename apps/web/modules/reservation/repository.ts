@@ -78,7 +78,7 @@ export async function updateReservationStatus(
 export async function updateReservation(
   tenantId: string,
   id: string,
-  data: Partial<ReservationCreateInput>,
+  data: Partial<Omit<ReservationCreateInput, 'discountPct' | 'discountReason'>> & { totalPrice?: number },
 ) {
   return db.reservation.update({
     where: { id, tenantId },

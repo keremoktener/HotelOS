@@ -113,6 +113,7 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
     e.preventDefault()
     setSaveError('')
     if (!firstName.trim() || !lastName.trim()) { setSaveError('Ad ve soyad zorunludur.'); return }
+    if (tcId.trim() && tcId.trim().length !== 11) { setSaveError('Kimlik numarası eksik veya hatalı'); return }
     const data: Record<string, unknown> = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
