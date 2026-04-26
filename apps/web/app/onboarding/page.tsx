@@ -196,7 +196,7 @@ export default function OnboardingPage() {
   // ── Step 1 ──────────────────────────────────────────────────────────────────
   if (step === 1) panel = (
     <>
-      <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 6px', color: 'var(--text)' }}>Otele Hoş Geldiniz</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>Otele Hoş Geldiniz</h1>
       <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 28px', lineHeight: 1.6 }}>Birkaç adımda HotelOS'i yapılandırın.</p>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 28 }}>
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 14 }}>Otel bilgileri</div>
@@ -215,7 +215,7 @@ export default function OnboardingPage() {
   // ── Step 2 ──────────────────────────────────────────────────────────────────
   if (step === 2) panel = (
     <>
-      <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 6px', color: 'var(--text)' }}>Oda Tipleri</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>Oda Tipleri</h1>
       <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 24px', lineHeight: 1.6 }}>Otelinizde bulunan oda kategorilerini tanımlayın.</p>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, marginBottom: 12 }}>
@@ -266,7 +266,7 @@ export default function OnboardingPage() {
     const allSelected = rooms.length > 0 && selected.size === rooms.length
     panel = (
       <>
-        <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 6px', color: 'var(--text)' }}>Odalar & Katlar</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 6px', color: 'var(--text)' }}>Odalar & Katlar</h1>
         <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '0 0 20px', lineHeight: 1.6 }}>Oda numaralarını toplu oluşturun veya tek tek ekleyin.</p>
 
         {roomTypes.length === 0 && <div style={{ marginBottom: 16, padding: '10px 14px', background: 'var(--warn-bg)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>Oda tipi tanımlamadınız — geri dönüp önce oda tipi ekleyin.</div>}
