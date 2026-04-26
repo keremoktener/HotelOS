@@ -58,7 +58,7 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
     } : null,
     payments: reservation.payments.map(p => ({
       id: p.id, amount: p.amount, method: p.method, reference: p.reference ?? '',
-      createdAt: p.createdAt.toISOString(),
+      paidAt: p.paidAt.toISOString(),
     })),
   }
 

@@ -20,13 +20,16 @@ const ROOM_STATUS_META: Record<string, { label: string; tone: string }> = {
   FAULTY: { label: 'Arızalı', tone: 'bad' }, DND: { label: 'DND', tone: 'info' },
 }
 const PAY_METHOD: Record<string, string> = {
-  CASH: 'Nakit', CREDIT_CARD: 'Kredi kartı', WIRE: 'Havale', VIRTUAL_POS: 'Sanal POS', OTHER: 'Diğer',
+  CASH: 'Nakit', WIRE: 'Havale', PHYSICALPOS: 'Fiziki POS', VIRTUALPOS: 'Sanal POS',
+}
+const PAY_REF_LABEL: Record<string, string> = {
+  WIRE: 'Havale kodu', PHYSICALPOS: 'Slip no', VIRTUALPOS: 'İşlem no', CASH: 'Makbuz no',
 }
 
 function toInputDate(iso: string) { return iso.slice(0, 10) }
 const formatCurrency = displayCurrency
 
-interface Payment { id: string; amount: number; method: string; reference: string; createdAt: string }
+interface Payment { id: string; amount: number; method: string; reference: string; paidAt: string }
 interface Reservation {
   id: string; status: string; totalPrice: number; paidAmount: number
   checkIn: string; checkOut: string; adults: number; children: number; notes: string; specialRequests: string
@@ -64,6 +67,14 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
   const [editError, setEditError] = useState('')
   const [showEarlyCheckIn, setShowEarlyCheckIn] = useState(false)
 
+  // Payment form state
+  const [showPayForm, setShowPayForm] = useState(false)
+  const [payAmount, setPayAmount] = useState('')
+  const [payMethod, setPayMethod] = useState<'CASH' | 'WIRE' | 'PHYSICALPOS'>('CASH')
+  const [payRef, setPayRef] = useState('')
+  const [payDate, setPayDate] = useState('')
+  const [payError, setPayError] = useState('')
+
   const discountPctNum = Math.min(100, Math.max(0, Number(editDiscountPct) || 0))
   const discountedTotal = discountPctNum > 0 ? Math.round(r.totalPrice * (1 - discountPctNum / 100)) : r.totalPrice
 
@@ -80,6 +91,25 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
     onSuccess: () => { router.refresh(); setEditing(false); setEditError('') },
     onError: (err) => setEditError(err.message),
   })
+
+  const paymentMut = trpc.reservation.payment.create.useMutation({
+    onSuccess: () => {
+      router.refresh()
+      setShowPayForm(false); setPayAmount(''); setPayRef(''); setPayDate(''); setPayError('')
+    },
+    onError: (err) => setPayError(err.message),
+  })
+
+  function handleAddPayment(e: React.FormEvent) {
+    e.preventDefault()
+    const amountKurus = Math.round(parseFloat(payAmount) * 100)
+    if (!payAmount || isNaN(amountKurus) || amountKurus <= 0) { setPayError('Geçerli bir tutar girin.'); return }
+    paymentMut.mutate({
+      reservationId: r.id, amount: amountKurus, method: payMethod as any,
+      reference: payRef.trim() || undefined,
+      paidAt: payDate ? new Date(payDate) : undefined,
+    })
+  }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -115,6 +145,7 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
   const canCheckOut = r.status === 'CHECKEDIN'
   const canCancel = r.status === 'WAITING' || r.status === 'CONFIRMED'
   const canEdit = r.status === 'WAITING' || r.status === 'CONFIRMED'
+  const canAddPayment = r.status !== 'CANCELLED' && r.status !== 'NOSHOW'
 
   const btnBase: React.CSSProperties = {
     width: '100%', padding: '9px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600,
@@ -309,13 +340,18 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
 
           {/* Payments */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-c)', fontWeight: 600, fontSize: 14 }}>Ödemeler</div>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-c)', display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>Ödemeler</div>
+              {canAddPayment && !showPayForm && (
+                <button onClick={() => setShowPayForm(true)} style={{ padding: '4px 10px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 5, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Ekle</button>
+              )}
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={th}>Tarih</th><th style={th}>Yöntem</th><th style={th}>Referans</th><th style={{ ...th, textAlign: 'right' }}>Tutar</th></tr></thead>
               <tbody>
                 {r.payments.map(p => (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--border-c)' }}>
-                    <td style={td}>{trDate(p.createdAt)}</td>
+                    <td style={td}>{trDate(p.paidAt)}</td>
                     <td style={td}>{PAY_METHOD[p.method] ?? p.method}</td>
                     <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-2)' }}>{p.reference || '—'}</td>
                     <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(p.amount)}</td>
@@ -330,6 +366,41 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
                 )}
               </tbody>
             </table>
+            {showPayForm && (
+              <form onSubmit={handleAddPayment} style={{ borderTop: '1px solid var(--border-c)', padding: 14, background: 'var(--surface-2)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3, fontWeight: 500 }}>Tutar (₺)</div>
+                    <input autoFocus type="number" min="0.01" step="0.01" value={payAmount} onChange={e => setPayAmount(e.target.value)} style={inputStyle} placeholder="0,00"/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3, fontWeight: 500 }}>Yöntem</div>
+                    <select value={payMethod} onChange={e => setPayMethod(e.target.value as typeof payMethod)} style={inputStyle}>
+                      <option value="CASH">Nakit</option>
+                      <option value="WIRE">Havale</option>
+                      <option value="PHYSICALPOS">Fiziki POS</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3, fontWeight: 500 }}>{PAY_REF_LABEL[payMethod]} (opsiyonel)</div>
+                    <input value={payRef} onChange={e => setPayRef(e.target.value)} style={inputStyle} placeholder="—"/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3, fontWeight: 500 }}>Tarih (opsiyonel)</div>
+                    <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} style={inputStyle}/>
+                  </div>
+                </div>
+                {payError && <div style={{ padding: '6px 10px', background: 'var(--bad-bg)', color: 'var(--bad)', borderRadius: 6, fontSize: 12, marginBottom: 8 }}>{payError}</div>}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="submit" disabled={paymentMut.isPending} style={{ padding: '7px 16px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: paymentMut.isPending ? 'not-allowed' : 'pointer', opacity: paymentMut.isPending ? 0.6 : 1 }}>
+                    {paymentMut.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+                  </button>
+                  <button type="button" onClick={() => { setShowPayForm(false); setPayAmount(''); setPayRef(''); setPayDate(''); setPayError('') }} style={{ padding: '7px 12px', background: 'transparent', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+                    İptal
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
 
