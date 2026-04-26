@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { AlertTriangle } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
 import { trDate, displayCurrency as formatCurrency } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
@@ -274,7 +275,7 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-2)' }}>{selectedGuestData.phone} · {selectedGuestData.email}</div>
                     {selectedGuestData.blacklisted ? (
-                      <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bad-bg)', color: 'var(--bad)', borderRadius: 6, fontSize: 12 }}>⚠ Kara liste{selectedGuestData.blacklistReason ? `: ${selectedGuestData.blacklistReason}` : ''}</div>
+                      <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bad-bg)', color: 'var(--bad)', borderRadius: 6, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={13} style={{ flexShrink: 0 }}/>Kara liste{selectedGuestData.blacklistReason ? `: ${selectedGuestData.blacklistReason}` : ''}</div>
                     ) : (
                       <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--good-bg)', color: 'var(--good)', borderRadius: 6, fontSize: 12 }}>✓ Kara liste kontrolü temiz</div>
                     )}

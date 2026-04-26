@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc/client'
+import { Phone, Mail, Globe, IdCard } from 'lucide-react'
 import { trDate, displayCurrency as formatCurrency } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
 import { Avatar } from '@/components/ui/avatar'
@@ -273,10 +274,10 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>İletişim</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
-              {g.phone && <div>📞 {g.phone}</div>}
-              {g.email && <div>✉ {g.email}</div>}
-              <div>🌍 {g.nationality}</div>
-              {(g.tcId || g.passportNo) && <div>🪪 {g.tcId ?? g.passportNo}</div>}
+              {g.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Phone size={13} style={{ flexShrink: 0, color: 'var(--text-3)' }}/>{g.phone}</div>}
+              {g.email && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={13} style={{ flexShrink: 0, color: 'var(--text-3)' }}/>{g.email}</div>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Globe size={13} style={{ flexShrink: 0, color: 'var(--text-3)' }}/>{g.nationality}</div>
+              {(g.tcId || g.passportNo) && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IdCard size={13} style={{ flexShrink: 0, color: 'var(--text-3)' }}/>{g.tcId ?? g.passportNo}</div>}
             </div>
           </div>
         </div>

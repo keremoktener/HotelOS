@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { AlertTriangle } from 'lucide-react'
 import { useOrganization, useUser } from '@clerk/nextjs'
 
 const STEPS = [
@@ -280,7 +281,7 @@ export default function OnboardingPage() {
             <div><SL>Oda tipi</SL><select value={bulkType} onChange={e => setBulkType(e.target.value)} style={inp} disabled={roomTypes.length === 0}><option value="">Seçin…</option>{roomTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}</select></div>
             <button onClick={bulkGenerate} disabled={!bulkFrom || !bulkTo || !bulkType} style={{ padding: '7px 14px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: (!bulkFrom || !bulkTo || !bulkType) ? 0.5 : 1 }}>Oluştur</button>
           </div>
-          {bulkSkipped > 0 && <div style={{ marginTop: 8, fontSize: 11, color: 'var(--warn)' }}>⚠ {bulkSkipped} oda numarası zaten mevcut olduğu için atlandı.</div>}
+          {bulkSkipped > 0 && <div style={{ marginTop: 8, fontSize: 11, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={12} style={{ flexShrink: 0 }}/>{bulkSkipped} oda numarası zaten mevcut olduğu için atlandı.</div>}
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 16, marginBottom: 12 }}>

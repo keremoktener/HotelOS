@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, Search } from 'lucide-react'
 import { trDate, displayCurrency } from '@/lib/utils'
 import { Chip } from '@/components/ui/chip'
 import { Avatar } from '@/components/ui/avatar'
@@ -102,7 +102,7 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
         </div>
         <div style={{ flex: 1 }}/>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 6, color: 'var(--text-3)', fontSize: 12, minWidth: 220 }}>
-          <span>🔍</span>
+          <Search size={13}/>
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Misafir adı, oda no…" style={{ flex: 1, border: 0, background: 'transparent', outline: 'none', color: 'var(--text)', fontSize: 12 }}/>
         </div>
       </div>

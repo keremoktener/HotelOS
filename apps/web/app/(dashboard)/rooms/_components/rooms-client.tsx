@@ -139,7 +139,7 @@ function RoomCard({ r, roomTypes, onChanged }: { r: Room; roomTypes: RoomType[];
           <div style={{ fontSize: 11, color: 'var(--text-3)', padding: '6px 8px' }}>Boş</div>
         )}
         {r.faultNote && (
-          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--bad)', padding: '6px 8px', background: 'var(--bad-bg)', borderRadius: 6 }}>⚠ {r.faultNote}</div>
+          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--bad)', padding: '6px 8px', background: 'var(--bad-bg)', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={12} style={{ flexShrink: 0 }}/>{r.faultNote}</div>
         )}
       </>}
     </div>
