@@ -1,10 +1,10 @@
 {
-  "id": "session-1777014123961",
-  "startedAt": "2026-04-24T07:02:03.961Z",
+  "id": "session-1777193267029",
+  "startedAt": "2026-04-26T08:47:47.029Z",
   "cwd": "/Users/keremoktener/Desktop/Files/HotelOS/apps/web",
   "context": {},
   "metrics": {
-    "edits": 2,
+    "edits": 0,
     "commands": 0,
     "tasks": 0,
     "errors": 0

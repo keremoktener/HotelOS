@@ -4,6 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MoreHorizontal } from 'lucide-react'
+import { trDate, displayCurrency } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+import { Avatar } from '@/components/ui/avatar'
+import { th, td } from '@/components/ui/data-table'
 
 const STATUS_LABEL: Record<string, string> = {
   WAITING: 'Beklemede', CONFIRMED: 'Onaylandı', CHECKEDIN: 'Girişte',
@@ -19,37 +23,6 @@ const FILTER_LABEL: Record<string, string> = { ALL: 'Tümü', WAITING: 'Beklemed
 type SortKey = 'guest' | 'room' | 'date' | 'price'
 type SortDir = 'asc' | 'desc'
 const DEFAULT_DIR: Record<SortKey, SortDir> = { guest: 'asc', room: 'asc', date: 'asc', price: 'desc' }
-
-const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)', whiteSpace: 'nowrap' }
-const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
-
-function Chip({ tone, dot, children }: { tone: string; dot?: boolean; children: React.ReactNode }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    good:    { bg: 'var(--good-bg)',    fg: 'var(--good)' },
-    warn:    { bg: 'var(--warn-bg)',    fg: 'var(--warn)' },
-    bad:     { bg: 'var(--bad-bg)',     fg: 'var(--bad)' },
-    info:    { bg: 'var(--info-bg)',    fg: 'var(--info)' },
-    neutral: { bg: 'var(--surface-2)', fg: 'var(--text-2)' },
-    muted:   { bg: 'transparent',      fg: 'var(--text-3)' },
-  }
-  const t = map[tone] ?? map.neutral
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: t.bg, color: t.fg, whiteSpace: 'nowrap' }}>
-      {dot && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'currentColor' }}/>}
-      {children}
-    </span>
-  )
-}
-
-function trDate(iso: string) {
-  const d = new Date(iso)
-  const M = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
-  return `${d.getDate()} ${M[d.getMonth()]}`
-}
-
-function formatCurrency(kurus: number) {
-  return (kurus / 100).toLocaleString('tr-TR') + ' ₺'
-}
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   if (!active) return <span style={{ opacity: 0.3, marginLeft: 4, fontSize: 10 }}>⇅</span>
@@ -94,9 +67,7 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
           const nb = `${b.guest.firstName} ${b.guest.lastName}`.toLowerCase()
           cmp = na.localeCompare(nb, 'tr')
         } else if (sortKey === 'room') {
-          const na = parseInt(a.room?.number ?? '0', 10) || 0
-          const nb = parseInt(b.room?.number ?? '0', 10) || 0
-          cmp = na - nb
+          cmp = (parseInt(a.room?.number ?? '0', 10) || 0) - (parseInt(b.room?.number ?? '0', 10) || 0)
         } else if (sortKey === 'date') {
           cmp = new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
         } else if (sortKey === 'price') {
@@ -107,17 +78,13 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
     : filtered
 
   function navStatus(s: string) {
-    const url = s === 'ALL' ? '/reservation' : `/reservation?status=${s}`
-    router.push(url)
+    router.push(s === 'ALL' ? '/reservation' : `/reservation?status=${s}`)
   }
 
   const active = activeStatus ?? 'ALL'
 
   const sortableTh = (key: SortKey, label: string, align?: 'right') => (
-    <th
-      style={{ ...th, cursor: 'pointer', userSelect: 'none', textAlign: align ?? 'left' }}
-      onClick={() => handleSort(key)}
-    >
+    <th style={{ ...th, cursor: 'pointer', userSelect: 'none', textAlign: align ?? 'left' }} onClick={() => handleSort(key)}>
       {label}<SortIcon active={sortKey === key} dir={sortDir}/>
     </th>
   )
@@ -164,9 +131,7 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
                   <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-2)' }}>{r.id.slice(0, 8)}</td>
                   <td style={td}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 26, height: 26, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>
-                        {r.guest.firstName[0]}{r.guest.lastName[0]}
-                      </div>
+                      <Avatar initials={`${r.guest.firstName[0] ?? ''}${r.guest.lastName[0] ?? ''}`} size={26}/>
                       <span style={{ fontWeight: 500 }}>{r.guest.firstName} {r.guest.lastName}</span>
                     </div>
                   </td>
@@ -176,7 +141,7 @@ export function ReservationListClient({ reservations, total, page, totalPages, a
                   <td style={td}><div style={{ fontSize: 12 }}>{trDate(r.checkIn)} → {trDate(r.checkOut)}</div></td>
                   <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.adults}{r.children ? `+${r.children}` : ''}</td>
                   <td style={td}><Chip tone={STATUS_TONE[r.status] ?? 'neutral'} dot>{STATUS_LABEL[r.status] ?? r.status}</Chip></td>
-                  <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(r.totalPrice)}</td>
+                  <td style={{ ...td, textAlign: 'right', fontWeight: 500 }}>{displayCurrency(r.totalPrice)}</td>
                   <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                     <button style={{ background: 'transparent', border: 0, color: 'var(--text-3)', padding: 4, borderRadius: 4, cursor: 'pointer' }}><MoreHorizontal size={14}/></button>
                   </td>

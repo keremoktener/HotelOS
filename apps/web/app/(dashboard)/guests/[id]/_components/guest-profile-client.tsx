@@ -4,6 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc/client'
+import { trDate, displayCurrency as formatCurrency } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+import { Avatar } from '@/components/ui/avatar'
+import { Field, inputStyle } from '@/components/ui/kv'
+import { DataTable, th, td } from '@/components/ui/data-table'
+import { SectionCard } from '@/components/ui/section-card'
 
 const DIAL_CODES = [
   { code: '+90',  label: '🇹🇷 +90'  }, { code: '+49',  label: '🇩🇪 +49'  },
@@ -41,40 +47,6 @@ const STATUS_META: Record<string, { label: string; tone: string }> = {
   CANCELLED: { label: 'İptal', tone: 'bad' }, NOSHOW: { label: 'No-show', tone: 'bad' },
 }
 
-function Chip({ tone, dot, children }: { tone: string; dot?: boolean; children: React.ReactNode }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    good: { bg: 'var(--good-bg)', fg: 'var(--good)' }, warn: { bg: 'var(--warn-bg)', fg: 'var(--warn)' },
-    bad: { bg: 'var(--bad-bg)', fg: 'var(--bad)' }, info: { bg: 'var(--info-bg)', fg: 'var(--info)' },
-    neutral: { bg: 'var(--surface-2)', fg: 'var(--text-2)' }, muted: { bg: 'transparent', fg: 'var(--text-3)' },
-  }
-  const t = map[tone] ?? map.neutral
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: t.bg, color: t.fg }}>
-      {dot && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'currentColor' }}/>}
-      {children}
-    </span>
-  )
-}
-
-function trDate(iso: string) {
-  const d = new Date(iso)
-  const M = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
-  return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`
-}
-function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
-
-const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
-const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
-const inputStyle: React.CSSProperties = { padding: '7px 10px', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)' }}>{label}</label>
-      {children}
-    </div>
-  )
-}
 
 interface Reservation { id: string; status: string; checkIn: string; checkOut: string; totalPrice: number; room: { number: string; typeName: string } | null }
 interface ActiveRes extends Reservation {}
@@ -150,7 +122,7 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
       {/* Header card */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-          <div style={{ width: 72, height: 72, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 600, flexShrink: 0 }}>{initials}</div>
+          <Avatar initials={initials} size={72}/>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{g.firstName} {g.lastName}</div>
@@ -252,7 +224,7 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
                 {[
                   ['Rezervasyon', g.activeReservation.id.slice(0, 8)],
                   ['Oda', g.activeReservation.room?.number ?? '—'],
-                  ['Giriş → Çıkış', `${trDate(g.activeReservation.checkIn)} → ${trDate(g.activeReservation.checkOut)}`],
+                  ['Giriş → Çıkış', `${trDate(g.activeReservation.checkIn, true)} → ${trDate(g.activeReservation.checkOut, true)}`],
                   ['Toplam', formatCurrency(g.activeReservation.totalPrice)],
                 ].map(([k, v]) => (
                   <div key={k}>
@@ -265,18 +237,14 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
           )}
 
           {/* History */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border-c)' }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>Konaklama geçmişi</div>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{g.history.length} kayıt</span>
-            </div>
+          <SectionCard title="Konaklama geçmişi" right={`${g.history.length} kayıt`}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={th}>Tarih</th><th style={th}>Oda</th><th style={th}>Durum</th><th style={{ ...th, textAlign: 'right' }}>Tutar</th></tr></thead>
               <tbody>
                 {g.history.map(h => (
                   <tr key={h.id} style={{ borderTop: '1px solid var(--border-c)' }}>
                     <td style={td}>
-                      <div style={{ fontWeight: 500 }}>{trDate(h.checkIn)}</div>
+                      <div style={{ fontWeight: 500 }}>{trDate(h.checkIn, true)}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{h.id.slice(0, 8)}</div>
                     </td>
                     <td style={td}>{h.room ? `${h.room.number} · ${h.room.typeName}` : '—'}</td>
@@ -287,7 +255,7 @@ export function GuestProfileClient({ guest: g, totalRevenue }: { guest: Guest; t
                 {g.history.length === 0 && <tr><td colSpan={4} style={{ ...td, textAlign: 'center', color: 'var(--text-3)' }}>Konaklama geçmişi yok</td></tr>}
               </tbody>
             </table>
-          </div>
+          </SectionCard>
         </div>
 
         {/* Right rail */}

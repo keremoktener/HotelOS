@@ -40,3 +40,17 @@ export function formatDateTime(date: Date | string): string {
 export function calculateNights(checkIn: Date, checkOut: Date): number {
   return dayjs(checkOut).diff(dayjs(checkIn), 'day')
 }
+
+const TR_MONTHS = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+
+/** Short Turkish date: "26 Nis" or "26 Nis 2026" with withYear=true */
+export function trDate(iso: string, withYear = false): string {
+  const d = new Date(iso)
+  const base = `${d.getDate()} ${TR_MONTHS[d.getMonth()]}`
+  return withYear ? `${base} ${d.getFullYear()}` : base
+}
+
+/** Display currency in Turkish format: "1.234,56 ₺" */
+export function displayCurrency(kurus: number): string {
+  return (kurus / 100).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ₺'
+}

@@ -3,13 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc/client'
+import { trDate, displayCurrency as formatCurrency } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+import { Avatar } from '@/components/ui/avatar'
 
-function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
-function trDate(iso: string) {
-  const d = new Date(iso)
-  const M = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
-  return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`
-}
 function Check() { return <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg> }
 
 const ROOM_STATUS: Record<string, { label: string; color: string; bg: string; selectable: boolean }> = {
@@ -17,16 +14,6 @@ const ROOM_STATUS: Record<string, { label: string; color: string; bg: string; se
   DIRTY:  { label: 'Kirli',   color: 'var(--warn)', bg: 'var(--warn-bg)',  selectable: false },
   FAULTY: { label: 'Arızalı', color: 'var(--bad)',  bg: 'var(--bad-bg)',   selectable: false },
   DND:    { label: 'DND',     color: 'var(--info)', bg: 'var(--info-bg)',  selectable: false },
-}
-
-function Chip({ tone, children }: { tone: string; children: React.ReactNode }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    good: { bg: 'var(--good-bg)', fg: 'var(--good)' }, warn: { bg: 'var(--warn-bg)', fg: 'var(--warn)' },
-    bad:  { bg: 'var(--bad-bg)',  fg: 'var(--bad)' },  info: { bg: 'var(--info-bg)', fg: 'var(--info)' },
-    neutral: { bg: 'var(--surface-2)', fg: 'var(--text-2)' },
-  }
-  const t = map[tone] ?? map.neutral
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: t.bg, color: t.fg }}>{children}</span>
 }
 
 function SumRow({ k, v, mono, muted }: { k: string; v: string; mono?: boolean; muted?: boolean }) {
@@ -252,9 +239,7 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
                         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderTop: i ? '1px solid var(--border-c)' : '0', cursor: 'pointer' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-weak)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                        <div style={{ width: 32, height: 32, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600 }}>
-                          {(g.firstName[0] ?? '').toUpperCase()}{(g.lastName[0] ?? '').toUpperCase()}
-                        </div>
+                        <Avatar initials={`${g.firstName[0] ?? ''}${g.lastName[0] ?? ''}`}/>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{g.firstName} {g.lastName}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-2)' }}>{g.phone}</div>
@@ -281,9 +266,7 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
                   <button onClick={() => setSelectedGuestId(null)} style={{ padding: '4px 10px', background: 'transparent', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>Değiştir</button>
                 </div>
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 600, flexShrink: 0 }}>
-                    {(selectedGuestData.firstName[0] ?? '').toUpperCase()}{(selectedGuestData.lastName[0] ?? '').toUpperCase()}
-                  </div>
+                  <Avatar initials={`${selectedGuestData.firstName[0] ?? ''}${selectedGuestData.lastName[0] ?? ''}`} size={52}/>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <div style={{ fontSize: 16, fontWeight: 600 }}>{selectedGuestData.firstName} {selectedGuestData.lastName}</div>

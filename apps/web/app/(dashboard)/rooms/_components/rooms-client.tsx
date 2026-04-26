@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, AlertTriangle, Moon, Bed, Pencil } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
+import { trDate, displayCurrency as formatCurrency } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+import { th, td } from '@/components/ui/data-table'
 
 const STATUS_META: Record<string, { label: string; tone: string; accent: string }> = {
   CLEAN:  { label: 'Temiz',   tone: 'good', accent: 'var(--good)' },
@@ -32,25 +35,6 @@ interface Room {
 interface RoomType { id: string; name: string }
 interface Props { rooms: Room[]; countBy: Record<string, number>; roomTypes: RoomType[] }
 
-function Chip({ tone, dot, children }: { tone: string; dot?: boolean; children: React.ReactNode }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    good: { bg: 'var(--good-bg)', fg: 'var(--good)' }, warn: { bg: 'var(--warn-bg)', fg: 'var(--warn)' },
-    bad:  { bg: 'var(--bad-bg)',  fg: 'var(--bad)' },  info: { bg: 'var(--info-bg)', fg: 'var(--info)' },
-    neutral: { bg: 'var(--surface-2)', fg: 'var(--text-2)' },
-  }
-  const t = map[tone] ?? map.neutral
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: t.bg, color: t.fg }}>
-      {dot && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'currentColor' }}/>}{children}
-    </span>
-  )
-}
-
-function trDate(iso: string) {
-  const d = new Date(iso)
-  return `${d.getDate()} ${['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][d.getMonth()]}`
-}
-function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
 
 const inputStyle: React.CSSProperties = { padding: '6px 8px', border: '1px solid var(--border-c)', borderRadius: 5, fontSize: 12, background: 'var(--bg)', color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' }
 

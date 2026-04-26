@@ -4,6 +4,11 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
+import { trDate, displayCurrency } from '@/lib/utils'
+import { Chip } from '@/components/ui/chip'
+import { Avatar } from '@/components/ui/avatar'
+import { KV, Field, inputStyle } from '@/components/ui/kv'
+import { th, td } from '@/components/ui/data-table'
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
   WAITING: { label: 'Beklemede', tone: 'info' }, CONFIRMED: { label: 'Onaylandı', tone: 'neutral' },
@@ -18,50 +23,8 @@ const PAY_METHOD: Record<string, string> = {
   CASH: 'Nakit', CREDIT_CARD: 'Kredi kartı', WIRE: 'Havale', VIRTUAL_POS: 'Sanal POS', OTHER: 'Diğer',
 }
 
-function Chip({ tone, dot, children }: { tone: string; dot?: boolean; children: React.ReactNode }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    good: { bg: 'var(--good-bg)', fg: 'var(--good)' }, warn: { bg: 'var(--warn-bg)', fg: 'var(--warn)' },
-    bad: { bg: 'var(--bad-bg)', fg: 'var(--bad)' }, info: { bg: 'var(--info-bg)', fg: 'var(--info)' },
-    neutral: { bg: 'var(--surface-2)', fg: 'var(--text-2)' }, muted: { bg: 'transparent', fg: 'var(--text-3)' },
-  }
-  const t = map[tone] ?? map.neutral
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: t.bg, color: t.fg }}>
-      {dot && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'currentColor' }}/>}
-      {children}
-    </span>
-  )
-}
-
-function KV({ k, v, full }: { k: string; v: React.ReactNode; full?: boolean }) {
-  return (
-    <div style={{ gridColumn: full ? '1 / -1' : 'auto' }}>
-      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>{k}</div>
-      <div style={{ fontSize: 13, color: 'var(--text)' }}>{v}</div>
-    </div>
-  )
-}
-
-function trDate(iso: string) {
-  const d = new Date(iso)
-  const M = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
-  return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`
-}
 function toInputDate(iso: string) { return iso.slice(0, 10) }
-function formatCurrency(kurus: number) { return (kurus / 100).toLocaleString('tr-TR') + ' ₺' }
-
-const th: React.CSSProperties = { textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--surface-2)' }
-const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: 'var(--text)', verticalAlign: 'middle' }
-const inputStyle: React.CSSProperties = { padding: '7px 10px', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)' }}>{label}</label>
-      {children}
-    </div>
-  )
-}
+const formatCurrency = displayCurrency
 
 interface Payment { id: string; amount: number; method: string; reference: string; createdAt: string }
 interface Reservation {
@@ -196,9 +159,7 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
 
       {/* Guest header */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, display: 'flex', gap: 16, boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--accent-weak)', color: 'var(--accent-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 600, flexShrink: 0 }}>
-          {r.guest.firstName[0]}{r.guest.lastName[0]}
-        </div>
+        <Avatar initials={`${r.guest.firstName[0] ?? ''}${r.guest.lastName[0] ?? ''}`} size={56}/>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{r.guest.firstName} {r.guest.lastName}</div>
@@ -301,11 +262,11 @@ export function ReservationDetailClient({ reservation: r, availableRooms }: { re
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-c)', fontWeight: 600, fontSize: 14 }}>Konaklama özeti</div>
             <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <KV k="Oda" v={r.room ? `${r.room.number} · ${r.room.roomType.name}` : '—'}/>
-              <KV k="Kapasite" v={r.room ? `${r.room.roomType.capacity} kişi` : '—'}/>
-              <KV k="Oda durumu" v={r.room ? <Chip tone={ROOM_STATUS_META[r.room.status]?.tone ?? 'neutral'} dot>{ROOM_STATUS_META[r.room.status]?.label ?? r.room.status}</Chip> : '—'}/>
-              <KV k="Kat" v={r.room ? (r.room.floor != null ? `Kat ${r.room.floor}` : '—') : '—'}/>
-              <KV k="Özel istekler" v={r.notes || <span style={{ color: 'var(--text-3)' }}>Yok</span>} full/>
+              <KV label="Oda">{r.room ? `${r.room.number} · ${r.room.roomType.name}` : '—'}</KV>
+              <KV label="Kapasite">{r.room ? `${r.room.roomType.capacity} kişi` : '—'}</KV>
+              <KV label="Oda durumu">{r.room ? <Chip tone={ROOM_STATUS_META[r.room.status]?.tone ?? 'neutral'} dot>{ROOM_STATUS_META[r.room.status]?.label ?? r.room.status}</Chip> : '—'}</KV>
+              <KV label="Kat">{r.room ? (r.room.floor != null ? `Kat ${r.room.floor}` : '—') : '—'}</KV>
+              <KV label="Özel istekler" full>{r.notes || <span style={{ color: 'var(--text-3)' }}>Yok</span>}</KV>
             </div>
           </div>
 
