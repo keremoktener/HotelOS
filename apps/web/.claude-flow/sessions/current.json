@@ -4,9 +4,9 @@
   "cwd": "/Users/keremoktener/Desktop/Files/HotelOS/apps/web",
   "context": {
     "lastMatchedPatterns": [
-      "mem-project_hotelos----",
+      "mem-MEMORY-memory-index",
       "insight-1776982787664-k42w",
-      "mem-MEMORY-memory-index"
+      "mem-project_hotelos----"
     ]
   },
   "metrics": {
@@ -15,5 +15,5 @@
     "tasks": 0,
     "errors": 0
   },
-  "updatedAt": "2026-04-27T06:21:54.234Z"
+  "updatedAt": "2026-04-27T06:30:12.193Z"
 }
