@@ -246,26 +246,26 @@ Phase 1 — Foundation (complete 2026-04-23)
 ### Phase 2 — Payments & Agency
 ☐ Virtual POS adapter interface + Garanti BBVA implementation
 ☐ Payment link generation and 3D Secure callback flow
-☐ Manual payment recording (cash, wire, physical POS)
+✓ Manual payment recording (cash, wire, physical POS)
 ☐ Refund management with dual-date tracking
 ☐ Agency module: CRUD, commission/discount/kickback config
 ☐ Price calendar: date-range pricing, multiplier matrix
-☐ Price preview endpoint
+✓ Price preview endpoint
 ☐ Electronic signature: link generation, signing page, storage
-☐ WhatsApp/SMS/email sending via Netgsm
+✓ WhatsApp/SMS/email sending via Netgsm (adapter + BullMQ queue + worker)
 
 ### Phase 3 — Operations
-☐ HK module: task creation, assignment, photo upload, completion validation
+✓ HK module: task creation, assignment, completion validation (Başlat/Tamamla workflow)
 ☐ HK common area scheduling (BullMQ daily cron)
 ☐ HK daily report generation and email delivery
-☐ Lost & found module
+✓ Lost & found module (create, mark returned, stats)
 ☐ Linen tracking
-☐ Maintenance module: fault reports (full CRUD, priority, cannot-fix workflow)
-☐ Equipment registry with warranty tracking
-☐ Preventive maintenance scheduling
-☐ External service firm registry and visit log
+✓ Maintenance module: fault reports (full CRUD, priority, cannot-fix workflow)
+✓ Equipment registry with warranty tracking and service date alerts
+✓ Preventive maintenance scheduling (plan, overdue/upcoming stats, complete with notes)
+✓ External service firm registry and visit log (firms CRUD + visit history)
 ☐ F&B: menu management, allergen tagging, auto-name-tag generation
-☐ KBS integration: guests (check-in) and employees
+✓ KBS integration: guests (check-in) — BullMQ queue + worker + no-op adapter
 
 ### Phase 4 — Accounting & HR
 ☐ Stock item management with barcode support
