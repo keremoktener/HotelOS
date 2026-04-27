@@ -259,7 +259,7 @@ Phase 1 — Foundation (complete 2026-04-23)
 ✓ HK common area scheduling (BullMQ daily cron at 06:00 + manual trigger + Ortak Alanlar tab in HK page)
 ✓ HK daily report generation (screen view at /housekeeping/report, date picker, print/PDF, email deferred)
 ✓ Lost & found module (create, mark returned, stats)
-☐ Linen tracking
+✓ Linen tracking (sent/returned/outstanding per room, 30-day log at /housekeeping/linen)
 ✓ Maintenance module: fault reports (full CRUD, priority, cannot-fix workflow)
 ✓ Equipment registry with warranty tracking and service date alerts
 ✓ Preventive maintenance scheduling (plan, overdue/upcoming stats, complete with notes)

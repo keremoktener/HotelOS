@@ -2,8 +2,10 @@ import { z } from 'zod'
 import { router, tenantProcedure } from '@/lib/trpc/server'
 import * as service from './service'
 import * as caRepo from './common-area-repository'
+import * as linenRepo from './linen-repository'
 import { hkTaskCreateSchema, hkTaskUpdateSchema, hkTaskFiltersSchema } from './types'
 import { commonAreaCreateSchema, commonAreaUpdateSchema } from './common-area-types'
+import { linenLogSchema } from './linen-types'
 
 export const hkRouter = router({
   list: tenantProcedure
@@ -43,5 +45,18 @@ export const hkRouter = router({
 
     triggerDue: tenantProcedure
       .mutation(({ ctx }) => caRepo.createDueSchedules(ctx.tenantId)),
+  }),
+
+  linen: router({
+    list: tenantProcedure
+      .input(z.object({ days: z.number().int().min(1).max(90).default(30) }))
+      .query(({ ctx, input }) => linenRepo.listLinen(ctx.tenantId, input.days)),
+
+    log: tenantProcedure
+      .input(linenLogSchema)
+      .mutation(({ ctx, input }) => linenRepo.logLinen(ctx.tenantId, input)),
+
+    stats: tenantProcedure
+      .query(({ ctx }) => linenRepo.getLinenStats(ctx.tenantId)),
   }),
 })

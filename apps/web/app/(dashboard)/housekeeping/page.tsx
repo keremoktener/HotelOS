@@ -62,7 +62,12 @@ export default async function HousekeepingPage() {
     <>
       <PageHeader
         title="Kat Hizmetleri"
-        right={<Link href="/housekeeping/report" style={{ fontSize: 12, color: 'var(--text-2)', textDecoration: 'none', padding: '5px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--surface-2)' }}>Günlük Rapor</Link>}
+        right={
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Link href="/housekeeping/linen" style={{ fontSize: 12, color: 'var(--text-2)', textDecoration: 'none', padding: '5px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--surface-2)' }}>Çamaşır Takibi</Link>
+            <Link href="/housekeeping/report" style={{ fontSize: 12, color: 'var(--text-2)', textDecoration: 'none', padding: '5px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--surface-2)' }}>Günlük Rapor</Link>
+          </div>
+        }
       />
       <HKClient tasks={plainTasks} stats={stats} rooms={plainRooms} commonAreas={plainCommonAreas}/>
     </>
