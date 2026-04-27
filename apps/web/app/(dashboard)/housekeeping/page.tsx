@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { PageHeader } from '@/components/layout/page-header'
 import { HKClient } from './_components/hk-client'
 import * as service from '@/modules/housekeeping/service'
+import * as caRepo from '@/modules/housekeeping/common-area-repository'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export default async function HousekeepingPage() {
   const tenantId = await getTenantId(orgId)
   if (!tenantId) redirect('/onboarding')
 
-  const [tasks, stats, rooms] = await Promise.all([
+  const [tasks, stats, rooms, commonAreas] = await Promise.all([
     service.listTasks(tenantId, {}),
     service.getStats(tenantId),
     db.room.findMany({
@@ -23,6 +24,7 @@ export default async function HousekeepingPage() {
       include: { roomType: true },
       orderBy: [{ floor: 'asc' }, { number: 'asc' }],
     }),
+    caRepo.listCommonAreas(tenantId),
   ])
 
   const plainTasks = tasks.map(t => ({
@@ -44,10 +46,21 @@ export default async function HousekeepingPage() {
     typeName: r.roomType.name, status: r.status,
   }))
 
+  const plainCommonAreas = commonAreas.map(a => ({
+    id: a.id,
+    name: a.name,
+    cleaningFrequencyDays: a.cleaningFrequencyDays,
+    schedules: a.schedules.map(s => ({
+      id: s.id,
+      scheduledDate: s.scheduledDate.toISOString(),
+      completedAt: s.completedAt?.toISOString() ?? null,
+    })),
+  }))
+
   return (
     <>
       <PageHeader title="Kat Hizmetleri"/>
-      <HKClient tasks={plainTasks} stats={stats} rooms={plainRooms}/>
+      <HKClient tasks={plainTasks} stats={stats} rooms={plainRooms} commonAreas={plainCommonAreas}/>
     </>
   )
 }

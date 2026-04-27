@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "worker:sms": "tsx workers/sms-worker.ts",
-    "worker:kbs": "tsx workers/kbs-worker.ts"
+    "worker:kbs": "tsx workers/kbs-worker.ts",
+    "worker:hk-cron": "tsx workers/hk-cron-worker.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.0",
