@@ -2,6 +2,8 @@ import { TRPCError } from '@trpc/server'
 import dayjs from 'dayjs'
 import * as repo from './repository'
 import { db } from '@/lib/db'
+import { enqueueKbsNotification } from '@/lib/queues/kbs-queue'
+import { createCheckoutTask } from '@/modules/housekeeping/service'
 import type { ReservationCreateInput, ReservationFilters, ReservationUpdateInput, PricePreviewInput } from './types'
 
 // CRITICAL: single source of truth for pricing — Section 5.7 of roadmap
@@ -149,12 +151,31 @@ export async function checkInReservation(tenantId: string, id: string) {
   // Mark room as DIRTY after check-in
   await db.room.update({ where: { id: reservation.roomId }, data: { status: 'DIRTY' } })
 
+  // KBS: notify Jandarma within 5 minutes (fire-and-forget, non-blocking)
+  const guest = await db.guest.findFirst({ where: { id: reservation.guestId } })
+  if (guest && room) {
+    enqueueKbsNotification({
+      reservationId: reservation.id, tenantId,
+      guestFirstName: guest.firstName, guestLastName: guest.lastName,
+      guestTcId: guest.tcId, guestPassportNo: guest.passportNo,
+      guestNationality: guest.nationality, guestDateOfBirth: guest.dateOfBirth,
+      roomNumber: room.number, checkIn: reservation.checkIn,
+    }).catch(() => {})
+  }
+
   return updated
 }
 
 export async function checkOutReservation(tenantId: string, id: string) {
-  await getReservation(tenantId, id)
-  return repo.updateReservationStatus(tenantId, id, 'CHECKEDOUT')
+  const reservation = await getReservation(tenantId, id)
+  const result = await repo.updateReservationStatus(tenantId, id, 'CHECKEDOUT')
+
+  // Auto-create HK cleaning task for vacated room (fire-and-forget)
+  if (reservation.roomId) {
+    createCheckoutTask(tenantId, reservation.roomId).catch(() => {})
+  }
+
+  return result
 }
 
 export async function cancelReservation(tenantId: string, id: string, reason: string) {

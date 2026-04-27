@@ -4,10 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, Calendar, Bed, Users, Sparkles, Wrench, Tag,
-  Receipt, Briefcase, BarChart2, Settings, ChevronLeft, ChevronRight, FileText,
+  Receipt, Briefcase, BarChart2, Settings, ChevronLeft, ChevronRight, FileText, PackageSearch,
+  type LucideIcon,
 } from 'lucide-react'
 
-const NAV = [
+interface NavItem { key: string; label: string; href: string; icon: LucideIcon; badge?: number; soon?: boolean }
+
+const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Operasyon',
     items: [
@@ -15,8 +18,9 @@ const NAV = [
       { key: 'reservations',  label: 'Rezervasyonlar',  href: '/reservation',   icon: Calendar, badge: 4 },
       { key: 'rooms',         label: 'Odalar',          href: '/rooms',         icon: Bed },
       { key: 'guests',        label: 'Misafirler',      href: '/guests',        icon: Users },
-      { key: 'housekeeping',  label: 'Kat Hizmetleri',  href: '/housekeeping',  icon: Sparkles, soon: true },
-      { key: 'maintenance',   label: 'Teknik Servis',   href: '/maintenance',   icon: Wrench,   soon: true },
+      { key: 'housekeeping',  label: 'Kat Hizmetleri',  href: '/housekeeping',  icon: Sparkles },
+      { key: 'lost-found',    label: 'Kayıp & Bulunan', href: '/lost-found',    icon: PackageSearch },
+      { key: 'maintenance',   label: 'Teknik Servis',   href: '/maintenance',   icon: Wrench },
     ],
   },
   {

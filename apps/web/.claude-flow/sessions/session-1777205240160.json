@@ -1,0 +1,14 @@
+{
+  "id": "session-1777205240160",
+  "startedAt": "2026-04-26T12:07:20.160Z",
+  "cwd": "/Users/keremoktener/Desktop/Files/HotelOS/apps/web",
+  "context": {},
+  "metrics": {
+    "edits": 20,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "endedAt": "2026-04-26T12:27:56.509Z",
+  "duration": 1236350
+}
