@@ -54,7 +54,7 @@ export function HkReportClient({ date, summary, tasks, caSchedules, lafItems }: 
         />
         <div style={{ flex: 1 }}/>
         <button
-          onClick={() => window.print()}
+          onClick={() => { const w = window.open(`/housekeeping/report/print?date=${date}`, '_blank'); w?.addEventListener('load', () => w.print()) }}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
         >
           <Printer size={14}/> Yazdır / PDF

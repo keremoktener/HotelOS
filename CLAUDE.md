@@ -266,6 +266,11 @@ Phase 1 — Foundation (complete 2026-04-23)
 ✓ External service firm registry and visit log (firms CRUD + visit history)
 ✓ F&B: menu management, allergen tagging, auto-name-tag generation (print-ready cards at /fnb/nametags)
 ✓ KBS integration: guests (check-in) — BullMQ queue + worker + no-op adapter
+✓ Folio: FolioLine model, charge lines, balance summary at /reservation/[id]/folio
+✓ KBS queue UI: notification status page at /kbs with detail drawer
+✓ Printable HK report: A4 print route at /housekeeping/report/print (no chrome, window.open from report page)
+✓ Rooms grid: fault indicator dot on room cards with open faultDetail
+✓ Design system: Btn component, subtitle on PageHeader, tone prop on StatTile
 
 ### Phase 4 — Accounting & HR
 ☐ Stock item management with barcode support

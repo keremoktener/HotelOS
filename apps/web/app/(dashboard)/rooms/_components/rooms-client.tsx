@@ -109,6 +109,9 @@ function RoomCard({ r, roomTypes, onChanged }: { r: Room; roomTypes: RoomType[];
       style={{ position: 'relative', background: 'var(--surface)', border: `1px solid ${mode !== 'none' ? 'var(--accent-c)' : 'var(--border-c)'}`, borderRadius: 10, padding: '14px 14px 12px 16px', overflow: 'hidden', cursor: 'pointer' }}
     >
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: meta.accent }}/>
+      {r.faultNote && (
+        <div style={{ position: 'absolute', top: 6, right: 34, width: 16, height: 16, borderRadius: '50%', background: 'var(--bad)', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={r.faultNote}>!</div>
+      )}
       <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: 8 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text)' }}>{r.number}</div>

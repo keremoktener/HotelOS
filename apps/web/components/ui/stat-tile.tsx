@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react'
 
-export function StatTile({ label, value, sub, trend, icon, color, bg }: {
+const TONE_MAP: Record<string, { color: string; bg: string }> = {
+  good:    { color: 'var(--good)', bg: 'var(--good-bg)' },
+  warn:    { color: 'var(--warn)', bg: 'var(--warn-bg)' },
+  bad:     { color: 'var(--bad)',  bg: 'var(--bad-bg)'  },
+  info:    { color: 'var(--info)', bg: 'var(--info-bg)' },
+  neutral: { color: 'var(--text-2)', bg: 'var(--surface-2)' },
+}
+
+export function StatTile({ label, value, sub, trend, icon, color, bg, tone }: {
   label: string
   value: string | number
   sub?: string
@@ -8,9 +16,11 @@ export function StatTile({ label, value, sub, trend, icon, color, bg }: {
   icon?: ReactNode
   color?: string
   bg?: string
+  tone?: string
 }) {
-  const iconColor = color ?? 'var(--text-2)'
-  const iconBg    = bg    ?? 'var(--surface-2)'
+  const resolved = tone ? (TONE_MAP[tone] ?? TONE_MAP.neutral) : null
+  const iconColor = color ?? resolved?.color ?? 'var(--text-2)'
+  const iconBg    = bg    ?? resolved?.bg    ?? 'var(--surface-2)'
 
   return (
     <div style={{ flex: 1, padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, minWidth: 0, boxShadow: 'var(--shadow-sm)' }}>

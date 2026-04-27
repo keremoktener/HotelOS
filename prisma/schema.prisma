@@ -250,11 +250,27 @@ model Reservation {
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 
-  payments   ReservationPayment[]
-  signatures ElectronicSignature[]
-  surveys    Survey[]
+  payments    ReservationPayment[]
+  signatures  ElectronicSignature[]
+  surveys     Survey[]
+  folioLines  FolioLine[]
 
   @@index([tenantId])
+}
+
+model FolioLine {
+  id            String      @id @default(uuid())
+  tenantId      String
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  description   String
+  source        String      @default("MANUAL")
+  amountKurus   Int
+  lineDate      DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+
+  @@index([tenantId])
+  @@index([reservationId])
 }
 
 model ReservationPayment {

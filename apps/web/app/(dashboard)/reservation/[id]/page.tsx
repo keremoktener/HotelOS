@@ -68,7 +68,15 @@ export default async function ReservationDetailPage({ params }: { params: { id: 
 
   return (
     <>
-      <PageHeader title={`${reservation.guest.firstName} ${reservation.guest.lastName}`} breadcrumb={breadcrumb}/>
+      <PageHeader
+        title={`${reservation.guest.firstName} ${reservation.guest.lastName}`}
+        breadcrumb={breadcrumb}
+        right={
+          <Link href={`/reservation/${reservation.id}/folio`} style={{ fontSize: 12, color: 'var(--text-2)', textDecoration: 'none', padding: '5px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--surface-2)' }}>
+            Folio
+          </Link>
+        }
+      />
       <ReservationDetailClient reservation={plain} availableRooms={rooms}/>
     </>
   )

@@ -7,10 +7,11 @@ import { useShell } from './dashboard-shell'
 interface Props {
   title: string
   breadcrumb?: React.ReactNode
+  subtitle?: string
   right?: React.ReactNode
 }
 
-export function PageHeader({ title, breadcrumb, right }: Props) {
+export function PageHeader({ title, breadcrumb, subtitle, right }: Props) {
   const { theme, toggle } = useTheme()
   const { setCmdOpen } = useShell()
 
@@ -25,6 +26,7 @@ export function PageHeader({ title, breadcrumb, right }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 1, minWidth: 0 }}>
         {breadcrumb && <div style={{ fontSize: 11, lineHeight: 1.2, color: 'var(--text-3)' }}>{breadcrumb}</div>}
         <div style={{ fontSize: 16, lineHeight: 1.2, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--text)' }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 11, lineHeight: 1.2, color: 'var(--text-3)' }}>{subtitle}</div>}
       </div>
       <div style={{ flex: 1 }}/>
       <button onClick={() => setCmdOpen(true)} style={{ height: 32, padding: '0 10px', display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--surface-2)', border: '1px solid var(--border-c)', borderRadius: 6, color: 'var(--text-3)', fontSize: 12, minWidth: 240, cursor: 'pointer' }}>

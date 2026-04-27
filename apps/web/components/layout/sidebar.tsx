@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, Calendar, Bed, Users, Sparkles, Wrench, Tag,
-  Receipt, Briefcase, BarChart2, Settings, ChevronLeft, ChevronRight, FileText, PackageSearch, UtensilsCrossed,
+  Receipt, Briefcase, BarChart2, Settings, ChevronLeft, ChevronRight, FileText, PackageSearch, UtensilsCrossed, Shield,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -22,6 +22,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { key: 'lost-found',    label: 'Kayıp & Bulunan', href: '/lost-found',    icon: PackageSearch },
       { key: 'maintenance',   label: 'Teknik Servis',   href: '/maintenance',   icon: Wrench },
       { key: 'fnb',           label: 'Yiyecek & İçecek', href: '/fnb',           icon: UtensilsCrossed },
+      { key: 'kbs',           label: 'KBS / Jandarma',   href: '/kbs',           icon: Shield },
     ],
   },
   {
