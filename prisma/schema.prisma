@@ -459,6 +459,38 @@ model ServiceVisit {
   @@index([tenantId])
 }
 
+// ─── F&B Module ──────────────────────────────────────────────────────────────
+
+model MenuCategory {
+  id        String     @id @default(uuid())
+  tenantId  String
+  name      String
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items MenuItem[]
+
+  @@index([tenantId])
+}
+
+model MenuItem {
+  id          String       @id @default(uuid())
+  tenantId    String
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  priceKurus  Int          @default(0)
+  allergens   String[]
+  isAvailable Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
 // ─── Accounting Module ────────────────────────────────────────────────────────
 
 model StockItem {

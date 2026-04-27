@@ -1,10 +1,19 @@
 {
+  "id": "session-1777270584703",
+  "startedAt": "2026-04-27T06:16:24.703Z",
+  "cwd": "/Users/keremoktener/Desktop/Files/HotelOS/apps/web",
   "context": {
     "lastMatchedPatterns": [
       "mem-project_hotelos----",
-      "mem-MEMORY-memory-index",
-      "insight-1776982787664-k42w"
+      "insight-1776982787664-k42w",
+      "mem-MEMORY-memory-index"
     ]
   },
-  "updatedAt": "2026-04-27T06:11:35.544Z"
+  "metrics": {
+    "edits": 6,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "updatedAt": "2026-04-27T06:21:54.234Z"
 }

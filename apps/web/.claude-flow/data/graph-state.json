@@ -1,27 +1,27 @@
 {
   "version": 1,
-  "updatedAt": 1777206476508,
+  "updatedAt": 1777270584705,
   "nodeCount": 3,
   "nodes": {
     "mem-MEMORY-memory-index": {
       "id": "mem-MEMORY-memory-index",
       "category": "core",
-      "confidence": 0.49,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "accessCount": 1,
       "createdAt": 1776979272715
     },
     "mem-project_hotelos----": {
       "id": "mem-project_hotelos----",
       "category": "project_hotelos",
-      "confidence": 0.49,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "accessCount": 1,
       "createdAt": 1776979272715
     },
     "insight-1776982787664-k42w": {
       "id": "insight-1776982787664-k42w",
       "category": "insights",
-      "confidence": 0.49,
-      "accessCount": 0,
+      "confidence": 0.55,
+      "accessCount": 1,
       "createdAt": 1776982787664
     }
   },

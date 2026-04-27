@@ -264,7 +264,7 @@ Phase 1 — Foundation (complete 2026-04-23)
 ✓ Equipment registry with warranty tracking and service date alerts
 ✓ Preventive maintenance scheduling (plan, overdue/upcoming stats, complete with notes)
 ✓ External service firm registry and visit log (firms CRUD + visit history)
-☐ F&B: menu management, allergen tagging, auto-name-tag generation
+✓ F&B: menu management, allergen tagging, auto-name-tag generation (print-ready cards at /fnb/nametags)
 ✓ KBS integration: guests (check-in) — BullMQ queue + worker + no-op adapter
 
 ### Phase 4 — Accounting & HR

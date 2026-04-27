@@ -5,6 +5,7 @@ import { guestRouter } from '@/modules/guest/router'
 import { hkRouter } from '@/modules/housekeeping/router'
 import { maintenanceRouter } from '@/modules/maintenance/router'
 import { lostFoundRouter } from '@/modules/lost-found/router'
+import { fnbRouter } from '@/modules/fnb/router'
 
 export const appRouter = router({
   reservation: reservationRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   hk: hkRouter,
   maintenance: maintenanceRouter,
   lostFound: lostFoundRouter,
+  fnb: fnbRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -193,5 +193,44 @@
         "accessCount": 0
       }
     ]
+  },
+  {
+    "timestamp": 1777270458587,
+    "nodes": 3,
+    "edges": 0,
+    "pageRankSum": 1,
+    "confidences": [
+      0.475,
+      0.475,
+      0.475
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "mem-MEMORY-memory-index",
+        "summary": "Memory Index",
+        "confidence": 0.475,
+        "pageRank": 0.3333333333333333,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-project_hotelos----",
+        "summary": "---",
+        "confidence": 0.475,
+        "pageRank": 0.3333333333333333,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1776982787664-k42w",
+        "summary": "Frequently edited: unknown (25x)",
+        "confidence": 0.475,
+        "pageRank": 0.3333333333333333,
+        "accessCount": 0
+      }
+    ]
   }
 ]
