@@ -257,7 +257,7 @@ Phase 1 — Foundation (complete 2026-04-23)
 ### Phase 3 — Operations
 ✓ HK module: task creation, assignment, completion validation (Başlat/Tamamla workflow)
 ✓ HK common area scheduling (BullMQ daily cron at 06:00 + manual trigger + Ortak Alanlar tab in HK page)
-☐ HK daily report generation and email delivery
+✓ HK daily report generation (screen view at /housekeeping/report, date picker, print/PDF, email deferred)
 ✓ Lost & found module (create, mark returned, stats)
 ☐ Linen tracking
 ✓ Maintenance module: fault reports (full CRUD, priority, cannot-fix workflow)

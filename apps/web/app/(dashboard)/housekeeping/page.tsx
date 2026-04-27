@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getTenantId } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { PageHeader } from '@/components/layout/page-header'
@@ -59,7 +60,10 @@ export default async function HousekeepingPage() {
 
   return (
     <>
-      <PageHeader title="Kat Hizmetleri"/>
+      <PageHeader
+        title="Kat Hizmetleri"
+        right={<Link href="/housekeeping/report" style={{ fontSize: 12, color: 'var(--text-2)', textDecoration: 'none', padding: '5px 10px', border: '1px solid var(--border-c)', borderRadius: 6, background: 'var(--surface-2)' }}>Günlük Rapor</Link>}
+      />
       <HKClient tasks={plainTasks} stats={stats} rooms={plainRooms} commonAreas={plainCommonAreas}/>
     </>
   )
