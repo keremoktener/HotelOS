@@ -44,8 +44,8 @@ interface AvailableRoom {
 interface Props { availableRooms: AvailableRoom[]; initialGuestId?: string }
 
 const STEPS = [
-  { n: 1, title: 'Tarih & misafir sayısı' },
-  { n: 2, title: 'Misafir' },
+  { n: 1, title: 'Misafir' },
+  { n: 2, title: 'Tarih & misafir sayısı' },
   { n: 3, title: 'Oda seçimi' },
   { n: 4, title: 'Fiyat & onay' },
 ]
@@ -159,8 +159,8 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
   }
 
   function canAdvance() {
-    if (step === 1) return !!(checkIn && checkOut && nights > 0 && Number(adults) >= 1)
-    if (step === 2) return !!selectedGuestId
+    if (step === 1) return !!selectedGuestId
+    if (step === 2) return !!(checkIn && checkOut && nights > 0 && Number(adults) >= 1)
     if (step === 3) return !!selectedRoomId
     return true
   }
@@ -168,7 +168,8 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
   const sel: React.CSSProperties = { width: '100%', height: 36, padding: '0 10px', background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }
 
   return (
-    <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto', padding: 24, display: 'flex', gap: 20 }}>
+    <div style={{ height: 'calc(100% - 56px)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', gap: 20 }}>
       {/* Step rail */}
       <div style={{ width: 220, flexShrink: 0 }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Adım {step} / 4</div>
@@ -199,30 +200,10 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
       {/* Main panel */}
       <div style={{ flex: 1, maxWidth: 780 }}>
 
-        {/* ── Step 1: Dates ── */}
+        {/* ── Step 1: Guest ── */}
         {step === 1 && (
           <>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-c)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Adım 1 · Tarih & Kişi</div>
-            <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 4px', color: 'var(--text)' }}>Tarih ve kişi sayısını seçin</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 24px' }}>Giriş ve çıkış tarihlerini ve misafir sayısını belirleyin.</p>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <Field label="Giriş tarihi"  value={checkIn}  onChange={setCheckIn}  type="date"/>
-                <Field label="Çıkış tarihi"  value={checkOut} onChange={setCheckOut} type="date" min={checkIn}/>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Yetişkin sayısı" value={adults}   onChange={setAdults}   type="number" min={1}/>
-                <Field label="Çocuk sayısı"    value={children} onChange={setChildren} type="number" min={0}/>
-              </div>
-              {nights > 0 && <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--info-bg)', borderRadius: 6, fontSize: 12, color: 'var(--info)' }}><b>{nights} gece</b> · {checkIn} → {checkOut}</div>}
-            </div>
-          </>
-        )}
-
-        {/* ── Step 2: Guest ── */}
-        {step === 2 && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-c)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Adım 2 · Misafir</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-c)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Adım 1 · Misafir</div>
             <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 4px', color: 'var(--text)' }}>Misafiri seçin veya ekleyin</h1>
             <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 20px' }}>Mevcut misafiri arayın. KBS bildirimi için TC / pasaport bilgisi zorunludur.</p>
 
@@ -283,6 +264,26 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
                 </div>
               </div>
             )}
+          </>
+        )}
+
+        {/* ── Step 2: Dates ── */}
+        {step === 2 && (
+          <>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-c)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Adım 2 · Tarih & Kişi</div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 4px', color: 'var(--text)' }}>Tarih ve kişi sayısını seçin</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 24px' }}>Giriş ve çıkış tarihlerini ve misafir sayısını belirleyin.</p>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border-c)', borderRadius: 10, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <Field label="Giriş tarihi"  value={checkIn}  onChange={setCheckIn}  type="date"/>
+                <Field label="Çıkış tarihi"  value={checkOut} onChange={setCheckOut} type="date" min={checkIn}/>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Field label="Yetişkin sayısı" value={adults}   onChange={setAdults}   type="number" min={1}/>
+                <Field label="Çocuk sayısı"    value={children} onChange={setChildren} type="number" min={0}/>
+              </div>
+              {nights > 0 && <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--info-bg)', borderRadius: 6, fontSize: 12, color: 'var(--info)' }}><b>{nights} gece</b> · {checkIn} → {checkOut}</div>}
+            </div>
           </>
         )}
 
@@ -431,21 +432,23 @@ export function ReservationWizardClient({ availableRooms, initialGuestId }: Prop
           </>
         )}
 
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--border-c)' }}>
-          <button onClick={() => step > 1 ? setStep(s => s - 1) : router.back()} style={{ padding: '9px 20px', background: 'transparent', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, color: 'var(--text-2)', cursor: 'pointer' }}>
-            ← Geri
+      </div>
+      </div>
+
+      {/* Footer bar — outside scroll area, always visible */}
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderTop: '1px solid var(--border-c)', background: 'var(--surface)' }}>
+        <button onClick={() => step > 1 ? setStep(s => s - 1) : router.back()} style={{ padding: '9px 20px', background: 'transparent', border: '1px solid var(--border-c)', borderRadius: 6, fontSize: 13, color: 'var(--text-2)', cursor: 'pointer' }}>
+          ← Geri
+        </button>
+        {step < 4 ? (
+          <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()} style={{ padding: '9px 24px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: canAdvance() ? 'pointer' : 'not-allowed', opacity: canAdvance() ? 1 : 0.5 }}>
+            Devam →
           </button>
-          {step < 4 ? (
-            <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()} style={{ padding: '9px 24px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: canAdvance() ? 'pointer' : 'not-allowed', opacity: canAdvance() ? 1 : 0.5 }}>
-              Devam →
-            </button>
-          ) : (
-            <button onClick={handleCreate} disabled={createMutation.isPending} style={{ padding: '9px 24px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: createMutation.isPending ? 'not-allowed' : 'pointer', opacity: createMutation.isPending ? 0.6 : 1 }}>
-              {createMutation.isPending ? 'Kaydediliyor…' : 'Rezervasyon Oluştur'}
-            </button>
-          )}
-        </div>
+        ) : (
+          <button onClick={handleCreate} disabled={createMutation.isPending} style={{ padding: '9px 24px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 0, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: createMutation.isPending ? 'not-allowed' : 'pointer', opacity: createMutation.isPending ? 0.6 : 1 }}>
+            {createMutation.isPending ? 'Kaydediliyor…' : 'Rezervasyon Oluştur'}
+          </button>
+        )}
       </div>
     </div>
   )

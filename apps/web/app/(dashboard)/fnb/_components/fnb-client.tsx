@@ -7,7 +7,8 @@ import { ALLERGENS } from '@/modules/fnb/types'
 import { StatTile } from '@/components/ui/stat-tile'
 import { Chip } from '@/components/ui/chip'
 import { inputStyle } from '@/components/ui/kv'
-import { ChevronDown, ChevronRight, Plus, Trash2, Pencil, UtensilsCrossed, Tag, CheckSquare } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, Trash2, Pencil, UtensilsCrossed, Tag, CheckSquare, ShoppingCart } from 'lucide-react'
+import { PostToRoomModal } from './post-to-room-modal'
 
 function formatPrice(kurus: number) {
   return (kurus / 100).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
@@ -19,13 +20,16 @@ interface Item {
 }
 interface Category { id: string; name: string; sortOrder: number; items: Item[] }
 interface Stats { categories: number; totalItems: number; availableItems: number }
-interface Props { categories: Category[]; stats: Stats }
+interface Reservation { id: string; guestName: string; roomNumber: string }
+interface Props { categories: Category[]; stats: Stats; reservations: Reservation[] }
 
 const ALLERGEN_MAP = Object.fromEntries(ALLERGENS.map(a => [a.code, a.label]))
 
-export function FnbClient({ categories: initial, stats }: Props) {
+export function FnbClient({ categories: initial, stats, reservations }: Props) {
   const router = useRouter()
   const refresh = () => router.refresh()
+
+  const [showPostModal, setShowPostModal] = useState(false)
 
   // category form
   const [showCatForm, setShowCatForm] = useState(false)
@@ -100,6 +104,14 @@ export function FnbClient({ categories: initial, stats }: Props) {
 
   return (
     <div style={{ padding: '0 24px 40px' }}>
+      {showPostModal && (
+        <PostToRoomModal
+          categories={initial.map(c => ({ id: c.id, name: c.name, items: c.items }))}
+          reservations={reservations}
+          onClose={() => setShowPostModal(false)}
+        />
+      )}
+
       {/* Stats */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
         <StatTile label="Kategori" value={stats.categories} icon={<Tag size={16}/>} />
@@ -110,12 +122,20 @@ export function FnbClient({ categories: initial, stats }: Props) {
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Menü Kategorileri</span>
-        <button
-          onClick={() => setShowCatForm(v => !v)}
-          style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
-        >
-          <Plus size={13}/> Kategori Ekle
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setShowPostModal(true)}
+            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: 'var(--surface-2)', color: 'var(--text-2)', border: '1px solid var(--border-c)', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}
+          >
+            <ShoppingCart size={13}/> Odaya İşle
+          </button>
+          <button
+            onClick={() => setShowCatForm(v => !v)}
+            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: 'var(--accent-c)', color: 'var(--accent-fg)', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+          >
+            <Plus size={13}/> Kategori Ekle
+          </button>
+        </div>
       </div>
 
       {/* Category form */}

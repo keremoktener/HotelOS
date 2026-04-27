@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantId } from '@/lib/auth'
+import { db } from '@/lib/db'
 import { PageHeader } from '@/components/layout/page-header'
 import { FnbClient } from './_components/fnb-client'
 import * as repo from '@/modules/fnb/repository'
@@ -15,9 +16,14 @@ export default async function FnbPage() {
   const tenantId = await getTenantId(orgId)
   if (!tenantId) redirect('/onboarding')
 
-  const [categories, stats] = await Promise.all([
+  const [categories, stats, checkedIn] = await Promise.all([
     repo.listCategories(tenantId),
     repo.getMenuStats(tenantId),
+    db.reservation.findMany({
+      where: { tenantId, status: 'CHECKEDIN' },
+      include: { guest: true, room: true },
+      orderBy: [{ room: { number: 'asc' } }],
+    }),
   ])
 
   const plain = (categories as Array<{
@@ -37,6 +43,12 @@ export default async function FnbPage() {
     })),
   }))
 
+  const reservations = checkedIn.map(r => ({
+    id: r.id,
+    guestName: `${r.guest.firstName} ${r.guest.lastName}`,
+    roomNumber: r.room?.number ?? '—',
+  }))
+
   return (
     <>
       <PageHeader
@@ -47,7 +59,7 @@ export default async function FnbPage() {
           </Link>
         }
       />
-      <FnbClient categories={plain} stats={stats}/>
+      <FnbClient categories={plain} stats={stats} reservations={reservations}/>
     </>
   )
 }
